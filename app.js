@@ -73,7 +73,11 @@ function selectedPlanPayload() {
   const movieCode = movieCodes[selectedMovie];
   if (!movieCode) throw new Error(`Unsupported movie selected: ${selectedMovie}`);
   const timeCode = timeInput.value.replace(':', '');
-  return `yes_${movieCode}_${localDate(selectedDate())}_${timeCode}`;
+  const start = selectedDate();
+  const [hours, minutes] = timeInput.value.split(':').map(Number);
+  start.setHours(hours, minutes, 0, 0);
+  const startMinute = Math.floor(start.getTime() / 60000).toString(36);
+  return `yes_${movieCode}_${localDate(selectedDate())}_${timeCode}_${startMinute}`;
 }
 
 function showFinal(dialog, accepted) {
