@@ -127,3 +127,45 @@ test('declined start payload notifies the owner and thanks the guest', async () 
     global.fetch = originalEnv.fetch;
   }
 });
+
+test('one and two in the morning are forwarded as overnight choices', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const messages = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    messages.push(JSON.parse(options.body).text);
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    for (const time of ['0100', '0200']) {
+      const response = createResponse();
+      await handler({
+        method: 'POST',
+        headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+        body: {
+          message: {
+            chat: { id: 555 },
+            text: `/start yes_i_2026-03-30_${time}`,
+          },
+        },
+      }, response);
+      assert.equal(response.statusCode, 200);
+    }
+
+    assert.match(messages[0], /Ночь на .*01:00/);
+    assert.match(messages[2], /Ночь на .*02:00/);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});

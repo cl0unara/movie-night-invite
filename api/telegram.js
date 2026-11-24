@@ -5,7 +5,7 @@ const MOVIES = {
   c: 'Чернобыль',
   p: '1+1',
 };
-const ALLOWED_TIMES = new Set(['1800', '1900', '2000', '2100', '2200', '2300', '0000']);
+const ALLOWED_TIMES = new Set(['1800', '1900', '2000', '2100', '2200', '2300', '0000', '0100', '0200']);
 
 function secretsMatch(expected, received) {
   if (typeof expected !== 'string' || typeof received !== 'string') return false;
@@ -116,7 +116,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (plan.accepted) {
-      const night = plan.time === '00:00' ? 'Ночь на ' : '';
+      const night = ['00:00', '01:00', '02:00'].includes(plan.time) ? 'Ночь на ' : '';
       const dateAndTime = `${night}${formatDate(plan.date)}, ${plan.time}`;
       await sendMessage(
         token,

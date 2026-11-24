@@ -28,7 +28,9 @@ function localDate(date) {
 
 function selectedDate() {
   const date = new Date(`${dateInput.value}T12:00:00`);
-  if (timeInput.value === '00:00') date.setDate(date.getDate() + 1);
+  if (['00:00', '01:00', '02:00'].includes(timeInput.value)) {
+    date.setDate(date.getDate() + 1);
+  }
   return date;
 }
 
@@ -41,7 +43,7 @@ function updateSummary() {
     })
     : '';
   if (selectedMovie && date && timeInput.value) {
-    const night = timeInput.value === '00:00' ? 'Ночь на ' : '';
+    const night = ['00:00', '01:00', '02:00'].includes(timeInput.value) ? 'Ночь на ' : '';
     summary.textContent = `Выбрано: ${selectedMovie}, ${night}${date} в ${timeInput.value}`;
   } else if (selectedMovie) {
     summary.textContent = `Выбрано: ${selectedMovie}. Осталось выбрать день`;
