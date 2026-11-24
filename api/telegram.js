@@ -66,6 +66,21 @@ function formatDate(dateString) {
   }).format(new Date(`${dateString}T00:00:00Z`));
 }
 
+function formatSenderName(from) {
+  if (!from || typeof from !== 'object') return 'Пользователь Telegram';
+
+  const name = [from.first_name, from.last_name]
+    .filter((part) => typeof part === 'string' && part.trim())
+    .map((part) => part.trim().replace(/\s+/g, ' '))
+    .join(' ');
+  const username = typeof from.username === 'string' && from.username.trim()
+    ? `@${from.username.trim()}`
+    : '';
+
+  if (name && username) return `${name} (${username})`;
+  return name || username || 'Пользователь Telegram';
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -88,6 +103,7 @@ module.exports = async function handler(req, res) {
   const message = req.body && req.body.message;
   const chatId = message && message.chat && message.chat.id;
   const text = message && message.text;
+  const senderName = formatSenderName(message && message.from);
   if ((typeof chatId !== 'number' && typeof chatId !== 'string') || typeof text !== 'string') {
     return res.status(200).json({ ok: true });
   }
@@ -121,11 +137,11 @@ module.exports = async function handler(req, res) {
       await sendMessage(
         token,
         adminChatId,
-        `Новый ответ на приглашение 🎬\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
+        `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
       await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
     } else {
-      await sendMessage(token, adminChatId, 'Ответ на приглашение: в этот раз не получится.');
+      await sendMessage(token, adminChatId, `Ответ на приглашение от ${senderName}: в этот раз не получится.`);
       await sendMessage(token, chatId, 'Спасибо, что ответила ❤️');
     }
 

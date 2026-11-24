@@ -41,6 +41,7 @@ test('accepted start payload notifies the owner and replies to the guest', async
       body: {
         message: {
           chat: { id: 555 },
+          from: { first_name: 'Аня', username: 'anya' },
           text: '/start yes_p_2026-03-30_0000',
         },
       },
@@ -49,6 +50,7 @@ test('accepted start payload notifies the owner and replies to the guest', async
     assert.equal(response.statusCode, 200);
     assert.equal(requests.length, 2);
     assert.equal(requests[0].body.chat_id, '7001');
+    assert.match(requests[0].body.text, /От: Аня \(@anya\)/);
     assert.match(requests[0].body.text, /Фильм: 1\+1/);
     assert.match(requests[0].body.text, /Ночь на .*30 марта 2026.*00:00/);
     assert.equal(requests[1].body.chat_id, 555);
@@ -113,12 +115,18 @@ test('declined start payload notifies the owner and thanks the guest', async () 
     await handler({
       method: 'POST',
       headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
-      body: { message: { chat: { id: 555 }, text: '/start no' } },
+      body: {
+        message: {
+          chat: { id: 555 },
+          from: { first_name: 'Аня' },
+          text: '/start no',
+        },
+      },
     }, response);
 
     assert.equal(response.statusCode, 200);
     assert.equal(requests.length, 2);
-    assert.match(requests[0].body.text, /в этот раз не получится/);
+    assert.match(requests[0].body.text, /от Аня: в этот раз не получится/);
     assert.equal(requests[1].body.text, 'Спасибо, что ответила ❤️');
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
