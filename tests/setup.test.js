@@ -17,19 +17,21 @@ function createResponse() {
   };
 }
 
-test('setup registers the Telegram webhook on the Vercel deployment', async () => {
+test('setup registers the Telegram webhook on the production domain', async () => {
   const originalEnv = {
     token: process.env.TELEGRAM_BOT_TOKEN,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
     setupSecret: process.env.WEBHOOK_SETUP_SECRET,
     vercelUrl: process.env.VERCEL_URL,
+    productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     fetch: global.fetch,
   };
   let request;
   process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
   process.env.TELEGRAM_WEBHOOK_SECRET = 'hook-secret';
   process.env.WEBHOOK_SETUP_SECRET = 'setup-secret';
-  process.env.VERCEL_URL = 'movie-invite-test.vercel.app';
+  process.env.VERCEL_URL = 'movie-invite-preview-test.vercel.app';
+  process.env.VERCEL_PROJECT_PRODUCTION_URL = 'movie-invite-test.vercel.app';
   global.fetch = async (url, options) => {
     request = { url, body: JSON.parse(options.body) };
     return { ok: true, json: async () => ({ ok: true }) };
@@ -52,6 +54,7 @@ test('setup registers the Telegram webhook on the Vercel deployment', async () =
     process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     process.env.WEBHOOK_SETUP_SECRET = originalEnv.setupSecret;
     process.env.VERCEL_URL = originalEnv.vercelUrl;
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = originalEnv.productionUrl;
     global.fetch = originalEnv.fetch;
   }
 });

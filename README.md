@@ -26,7 +26,7 @@ python -m http.server 8000
    - `TELEGRAM_WEBHOOK_SECRET` — случайная строка из латинских букв, цифр, `_` и `-`.
    - `WEBHOOK_SETUP_SECRET` — отдельная случайная строка для защиты настройки webhook.
 3. Переразверни проект после добавления переменных.
-4. Один раз зарегистрируй webhook из PowerShell, заменив адрес проекта и секрет:
+4. Один раз зарегистрируй webhook из PowerShell, заменив адрес Production-домена проекта и секрет. Используй постоянный адрес проекта, а не адрес отдельного deployment:
 
    ```powershell
    $headers = @{ Authorization = "Bearer <WEBHOOK_SETUP_SECRET>" }

@@ -10,7 +10,10 @@ function secretsMatch(expected, received) {
 
 function getDeploymentHost(req) {
   const forwardedHost = req.headers['x-forwarded-host'];
-  const value = process.env.VERCEL_URL || forwardedHost || req.headers.host;
+  const value = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    || forwardedHost
+    || req.headers.host
+    || process.env.VERCEL_URL;
   if (typeof value !== 'string') return null;
 
   const host = value.split(',')[0].trim().replace(/^https?:\/\//, '').split('/')[0];
