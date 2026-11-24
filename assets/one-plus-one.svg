@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800">
+  <defs>
+    <linearGradient id="evening" x2="0" y2="1"><stop stop-color="#263c56"/><stop offset=".58" stop-color="#ed9d68"/><stop offset="1" stop-color="#f3c48b"/></linearGradient>
+    <radialGradient id="lamp"><stop stop-color="#fff3c6" stop-opacity=".9"/><stop offset="1" stop-color="#ffd783" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#evening)"/>
+  <circle cx="482" cy="210" r="168" fill="url(#lamp)"/>
+  <path d="M0 437q149-83 275-7t365-20v390H0z" fill="#273447"/>
+  <path d="M0 505q141-47 264 13t376-23v305H0z" fill="#394456"/>
+  <rect x="61" y="126" width="182" height="260" rx="90" fill="#b4866f" opacity=".82"/>
+  <rect x="389" y="126" width="190" height="260" rx="92" fill="#283344" opacity=".92"/>
+  <g transform="translate(77 238)">
+    <path d="M8 37q8-46 60-47 57 7 60 51l-9 64-26 12-8-44H62l-8 44-27-13z" fill="#dfb69a"/>
+    <path d="M24 13q10-33 47-31 41 2 52 33l-19 20-67-2z" fill="#3a302e"/>
+    <path d="M32 105h31l-9 108H36zM80 105h32l25 108H99z" fill="#303c4c"/>
+    <path d="M30 212h33l-3 10H17zM99 212h40l10 10h-43z" fill="#eac192"/>
+  </g>
+  <g transform="translate(405 235)">
+    <path d="M5 43q12-49 63-48 54 4 63 51l-10 66-29 9-7-46H60l-6 46-30-10z" fill="#4a372f"/>
+    <path d="M24 13q11-31 45-31 38 1 54 37l-18 17-70-2z" fill="#25272e"/>
+    <path d="M31 117h35l-10 105H34zM82 117h35l23 105h-38z" fill="#2c3443"/>
+    <path d="M28 220h35l-2 10H15zM101 220h40l10 10h-43z" fill="#e9bd89"/>
+  </g>
+  <g fill="#ffe2a2">
+    <circle cx="91" cy="94" r="3"/><circle cx="546" cy="106" r="3"/><circle cx="310" cy="181" r="2"/><circle cx="345" cy="94" r="2"/>
+  </g>
+  <path d="M51 659h538" stroke="#fff1d2" stroke-opacity=".75"/>
+  <text x="50" y="710" fill="#fff5db" font-family="Georgia,serif" font-size="62" font-weight="700" letter-spacing="5">1 + 1</text>
+  <text x="53" y="749" fill="#fff0d4" font-family="Arial,sans-serif" font-size="12" letter-spacing="5">СОВСЕМ НЕ ОДИН</text>
+</svg>

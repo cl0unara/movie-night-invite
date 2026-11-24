@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#201a33">
+  <meta name="description" content="Маленькое приглашение на вечер кино и уютный выбор фильма.">
+  <title>Один уютный вечер</title>
+  <link rel="icon" href="assets/heart.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="hearts" aria-hidden="true">
+    <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
+  </div>
+
+  <main class="page">
+    <header class="topline">
+      <a class="wordmark" href="#" aria-label="С теплом">С ТЕПЛОМ <span>♥</span></a>
+      <span class="topline-note">маленькое приглашение</span>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow"><span class="status-dot"></span> ПЛАН НА ВЕЧЕР</p>
+      <h1 id="page-title">Давай устроим<br><em>киновечер?</em></h1>
+      <p class="intro-copy">Ты, я, что-нибудь вкусное и хорошая история на экране. Выбирай настроение, а фильм решим вместе.</p>
+      <div class="intro-note"><span aria-hidden="true">✦</span> Никакой спешки. Только если тебе самой хочется.</div>
+    </section>
+
+    <section class="invite-card" id="invitation" aria-labelledby="invite-title">
+      <div class="card-heading">
+        <div>
+          <p class="eyebrow">ПРОГРАММА ВЕЧЕРА</p>
+          <h2 id="invite-title">Что посмотрим?</h2>
+        </div>
+        <span class="popcorn" aria-hidden="true">🍿</span>
+      </div>
+
+      <div class="movies" role="group" aria-label="Выбери фильм или сериал">
+        <button class="movie-card" type="button" data-movie="Интерстеллар" aria-pressed="false">
+          <span class="poster-wrap"><img src="assets/interstellar.svg" alt="Авторская космическая иллюстрация к Интерстеллару" width="640" height="800"></span>
+          <span class="movie-info"><b>Интерстеллар</b><small>Космос, чувства и большие тайны</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="Чернобыль" aria-pressed="false">
+          <span class="poster-wrap"><img src="assets/chernobyl.svg" alt="Авторская туманная иллюстрация к сериалу Чернобыль" width="640" height="800"></span>
+          <span class="movie-info"><b>Чернобыль</b><small>Сильная история, которую хочется обсудить</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="1+1" aria-pressed="false">
+          <span class="poster-wrap"><img src="assets/one-plus-one.svg" alt="Авторская иллюстрация к фильму 1+1" width="640" height="800"></span>
+          <span class="movie-info"><b>1+1</b><small>Тёплый фильм, добрый юмор и хорошая компания</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+      </div>
+
+      <form class="plan" id="plan-form">
+        <p class="plan-title">Когда тебе было бы удобно?</p>
+        <div class="date-heading"><span>Выбери день</span><span class="date-note">Можно и другой</span></div>
+        <div class="date-picks" id="date-picks" role="group" aria-label="Выбери удобный день"></div>
+        <label class="other-date">
+          <span>Или укажи любую свою дату</span>
+          <input id="date" name="date" type="date" required>
+        </label>
+        <div class="time-heading"><span>А во сколько?</span><span class="date-note">Время местное</span></div>
+        <div class="time-picks" id="time-picks" role="group" aria-label="Выбери время">
+          <button type="button" class="time-chip" data-time="18:00"><span aria-hidden="true">☀</span>18:00</button>
+          <button type="button" class="time-chip" data-time="19:00"><span aria-hidden="true">◷</span>19:00</button>
+          <button type="button" class="time-chip selected" data-time="20:00" aria-pressed="true"><span aria-hidden="true">☾</span>20:00</button>
+          <button type="button" class="time-chip" data-time="21:00"><span aria-hidden="true">☾</span>21:00</button>
+          <button type="button" class="time-chip" data-time="22:00"><span aria-hidden="true">✦</span>22:00</button>
+        </div>
+        <input id="time" name="time" type="hidden" value="20:00">
+        <p class="selection-summary" id="summary" aria-live="polite">Сначала выбери, что посмотреть</p>
+        <div class="form-actions">
+          <button class="button button-main" id="send-answer" type="submit" disabled>Да, давай устроим киновечер <span aria-hidden="true">♡</span></button>
+          <button class="button button-quiet" id="decline" type="button">Не получится, но спасибо</button>
+        </div>
+        <p class="mail-note">По нажатию откроется почта с готовым ответом. Нажми «Отправить», чтобы я его получил.</p>
+      </form>
+    </section>
+
+    <footer class="footer"><span>Сделано с теплом</span><span aria-hidden="true">♥</span></footer>
+  </main>
+
+  <dialog class="welcome" id="welcome" aria-labelledby="welcome-title" aria-describedby="welcome-copy">
+    <div class="welcome-inner">
+      <span class="welcome-heart" aria-hidden="true">♥</span>
+      <p class="eyebrow">ОДНО СООБЩЕНИЕ ДЛЯ ТЕБЯ</p>
+      <h2 id="welcome-title">У меня есть<br><em>идея на вечер</em></h2>
+      <p id="welcome-copy">Хочешь посмотреть кино или сериал вместе? Выбирай только если тебе самой хочется.</p>
+      <button class="button button-main" id="open-invitation" type="button">Посмотреть приглашение <span aria-hidden="true">♡</span></button>
+      <button class="button button-quiet welcome-later" id="welcome-later" type="button">Не сейчас</button>
+    </div>
+  </dialog>
+
+  <dialog class="thanks" id="thanks" aria-labelledby="thanks-title">
+    <div class="thanks-inner">
+      <span class="thanks-heart" aria-hidden="true">♥</span>
+      <p class="eyebrow" id="thanks-eyebrow">СООБЩЕНИЕ ПОДГОТОВЛЕНО</p>
+      <h2 id="thanks-title">Жду тебя,<br><em>Газява ❤️</em></h2>
+      <p id="thanks-copy">Почта откроется с готовым ответом. Отправь письмо, и я узнаю, что ты выбрала.</p>
+      <a class="button button-main" id="send-email" href="">Открыть письмо и отправить</a>
+      <button class="button button-main" id="close-thanks" type="button">Хорошо <span aria-hidden="true">♡</span></button>
+    </div>
+  </dialog>
+
+  <dialog class="thanks" id="decline-thanks" aria-labelledby="decline-title">
+    <div class="thanks-inner">
+      <span class="thanks-heart" aria-hidden="true">♡</span>
+      <p class="eyebrow">СПАСИБО ЗА ОТВЕТ</p>
+      <h2 id="decline-title">Всё хорошо</h2>
+      <p>Спасибо, что ответила. Если захочешь в другой раз, я буду рад.</p>
+      <a class="button button-main" id="decline-email" href="">Отправить ответ</a>
+      <button class="button button-main" id="close-decline" type="button">Закрыть</button>
+    </div>
+  </dialog>
+</body>
+</html>

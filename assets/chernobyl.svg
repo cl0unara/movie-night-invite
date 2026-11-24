@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800">
+  <defs>
+    <linearGradient id="mist" x2="0" y2="1"><stop stop-color="#b6c4b5"/><stop offset=".48" stop-color="#82958d"/><stop offset="1" stop-color="#384d4b"/></linearGradient>
+    <radialGradient id="sun"><stop stop-color="#f8efd3" stop-opacity=".85"/><stop offset="1" stop-color="#f8efd3" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#mist)"/>
+  <circle cx="497" cy="214" r="220" fill="url(#sun)"/>
+  <g fill="#586b68" opacity=".32">
+    <path d="M0 416h102v-89h17v89h31v-164h19v164h40v-108h18v108h35v-196h21v196h32v-112h17v112h45v-143h17v143h48v-89h17v89h47v-165h21v165h35v384H0z"/>
+  </g>
+  <path d="M0 524q96-24 191 6t201-5 248-3v278H0z" fill="#435b54"/>
+  <path d="M0 578q132-26 259 2t381-6" fill="none" stroke="#d4d7c5" stroke-opacity=".45" stroke-width="3"/>
+  <g transform="translate(294 420)" fill="#203233">
+    <path d="M32 65q3-47 41-53 40 5 41 54l-9 90-21 7-5-51-13 1-8 51-20-8z"/>
+    <path d="M42 20q4-30 32-33 31 5 35 35l-13 13-38-2z"/>
+    <path d="M47 48l-31 81 13 7 37-62M99 48l36 85-14 8-40-66"/>
+    <path d="M42 145h26l-15 123H30zM78 145h24l25 123h-24z"/>
+    <path d="M29 268H8v10h48l4-9M103 268h24l10 10h-49z"/>
+    <path d="M85 21l31 12-6 68-15 26-10-48z" fill="#405653"/>
+  </g>
+  <g fill="#f3efd9" opacity=".48">
+    <circle cx="92" cy="241" r="2"/><circle cx="181" cy="351" r="2"/><circle cx="535" cy="337" r="3"/><circle cx="68" cy="475" r="2"/>
+    <circle cx="563" cy="531" r="2"/><circle cx="221" cy="208" r="2"/><circle cx="476" cy="426" r="2"/>
+  </g>
+  <path d="M51 659h538" stroke="#f4efdc" stroke-opacity=".7"/>
+  <text x="50" y="709" fill="#f8f2df" font-family="Arial,sans-serif" font-size="38" font-weight="700" letter-spacing="9">ЧЕРНОБЫЛЬ</text>
+  <text x="53" y="745" fill="#e1e6d6" font-family="Arial,sans-serif" font-size="12" letter-spacing="5">ТИШИНА ТОЖЕ ХРАНИТ ИСТОРИИ</text>
+</svg>
