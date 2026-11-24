@@ -13,7 +13,9 @@ function isConfigured() {
     process.env.UPSTASH_REDIS_REST_URL
     && process.env.UPSTASH_REDIS_REST_TOKEN
     && process.env.QSTASH_TOKEN
-    && process.env.REMINDER_CALLBACK_SECRET\n    && typeof process.env.VERCEL_PROJECT_PRODUCTION_URL === 'string'\n    && /^[a-z0-9.-]+$/i.test(process.env.VERCEL_PROJECT_PRODUCTION_URL),
+    && process.env.REMINDER_CALLBACK_SECRET
+    && typeof process.env.VERCEL_PROJECT_PRODUCTION_URL === 'string'
+    && /^[a-z0-9.-]+$/i.test(process.env.VERCEL_PROJECT_PRODUCTION_URL),
   );
 }
 
