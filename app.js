@@ -12,6 +12,13 @@ const declineThanks = document.querySelector('#decline-thanks');
 
 let selectedMovie = '';
 
+const movieCodes = {
+  Интерстеллар: 'i',
+  Чернобыль: 'c',
+  '1+1': 'p',
+};
+const telegramBotUsername = 'priglosgazavybot';
+
 function localDate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -56,22 +63,27 @@ function closeDialog(dialog) {
   if (dialog && dialog.open) dialog.close();
 }
 
-function telegramShareHref(message) {
-  const share = new URL('https://t.me/share/url');
-  share.searchParams.set('url', location.href);
-  share.searchParams.set('text', message);
-  return share.toString();
+function telegramBotHref(payload) {
+  return `https://t.me/${telegramBotUsername}?start=${encodeURIComponent(payload)}`;
 }
 
-function showFinal(dialog, message, accepted) {
+function selectedPlanPayload() {
+  const movieCode = movieCodes[selectedMovie];
+  if (!movieCode) throw new Error(`Unsupported movie selected: ${selectedMovie}`);
+  const timeCode = timeInput.value.replace(':', '');
+  return `yes_${movieCode}_${localDate(selectedDate())}_${timeCode}`;
+}
+
+function showFinal(dialog, accepted) {
   closeDialog(dialog);
   if (accepted) {
     document.querySelector('#thanks-copy').textContent =
-      'Откроется Telegram с готовым текстом. Выбери чат и нажми «Отправить».';
-    document.querySelector('#send-telegram').href = telegramShareHref(message);
+      'Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.';
+    document.querySelector('#send-telegram').href =
+      telegramBotHref(selectedPlanPayload());
     openDialog(thanks);
   } else {
-    document.querySelector('#decline-telegram').href = telegramShareHref(message);
+    document.querySelector('#decline-telegram').href = telegramBotHref('no');
     openDialog(declineThanks);
   }
 }
@@ -130,9 +142,8 @@ document.querySelector('#open-invitation').addEventListener('click', () => {
 });
 
 document.querySelector('#welcome-later').addEventListener('click', () => {
-  const message = 'В этот раз не получится.';
   closeDialog(welcome);
-  showFinal(null, message, false);
+  showFinal(null, false);
 });
 
 planForm.addEventListener('submit', (event) => {
@@ -141,19 +152,11 @@ planForm.addEventListener('submit', (event) => {
     if (!selectedMovie) summary.textContent = 'Сначала выбери фильм или сериал, пожалуйста';
     return;
   }
-  const date = selectedDate().toLocaleDateString('ru-RU', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-  const night = timeInput.value === '00:00' ? 'Ночь на ' : '';
-  const message = `Фильм: ${selectedMovie}.\nДата и время: ${night}${date}, ${timeInput.value}.\n\nЖду тебя, Газява ❤️`;
-  showFinal(null, message, true);
+  showFinal(null, true);
 });
 
 document.querySelector('#decline').addEventListener('click', () => {
-  showFinal(null, 'В этот раз не получится.', false);
+  showFinal(null, false);
 });
 
 document.querySelector('#close-thanks').addEventListener('click', () => {

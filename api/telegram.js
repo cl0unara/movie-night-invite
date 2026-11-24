@@ -1,0 +1,137 @@
+const { timingSafeEqual } = require('node:crypto');
+
+const MOVIES = {
+  i: 'Интерстеллар',
+  c: 'Чернобыль',
+  p: '1+1',
+};
+const ALLOWED_TIMES = new Set(['1800', '1900', '2000', '2100', '2200', '2300', '0000']);
+
+function secretsMatch(expected, received) {
+  if (typeof expected !== 'string' || typeof received !== 'string') return false;
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+  return expectedBuffer.length === receivedBuffer.length
+    && timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+function parsePlan(payload) {
+  if (payload === 'no') return { accepted: false };
+
+  const match = /^yes_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})$/.exec(payload);
+  if (!match || !ALLOWED_TIMES.has(match[3])) return null;
+
+  const date = new Date(`${match[2]}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== match[2]) {
+    return null;
+  }
+
+  return {
+    accepted: true,
+    movie: MOVIES[match[1]],
+    date: match[2],
+    time: `${match[3].slice(0, 2)}:${match[3].slice(2)}`,
+  };
+}
+
+async function telegramRequest(token, method, body) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error('Telegram returned an invalid response');
+  }
+  if (!response.ok || !result.ok) {
+    throw new Error('Telegram rejected the request');
+  }
+}
+
+async function sendMessage(token, chatId, text) {
+  await telegramRequest(token, 'sendMessage', { chat_id: chatId, text });
+}
+
+function formatDate(dateString) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${dateString}T00:00:00Z`));
+}
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!token || !webhookSecret) {
+    return res.status(503).json({ error: 'Telegram bot is not configured' });
+  }
+  if (adminChatId && !/^-?\d+$/.test(adminChatId)) {
+    return res.status(503).json({ error: 'TELEGRAM_ADMIN_CHAT_ID must be numeric' });
+  }
+
+  if (!secretsMatch(webhookSecret, req.headers['x-telegram-bot-api-secret-token'])) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const message = req.body && req.body.message;
+  const chatId = message && message.chat && message.chat.id;
+  const text = message && message.text;
+  if ((typeof chatId !== 'number' && typeof chatId !== 'string') || typeof text !== 'string') {
+    return res.status(200).json({ ok: true });
+  }
+
+  const start = /^\/start(?:@\w+)?(?:\s+([A-Za-z0-9_-]+))?$/.exec(text.trim());
+  if (!start) return res.status(200).json({ ok: true });
+
+  const payload = start[1];
+  try {
+    if (!payload) {
+      const greeting = adminChatId
+        ? 'Бот подключён. Открой приглашение и отправь ответ через кнопку.'
+        : `Твой chat ID: ${chatId}\nДобавь его в Vercel как TELEGRAM_ADMIN_CHAT_ID.`;
+      await sendMessage(token, chatId, greeting);
+      return res.status(200).json({ ok: true });
+    }
+
+    const plan = parsePlan(payload);
+    if (!plan) {
+      await sendMessage(token, chatId, 'Не удалось прочитать ответ. Открой приглашение и попробуй ещё раз.');
+      return res.status(200).json({ ok: true });
+    }
+    if (!adminChatId) {
+      await sendMessage(token, chatId, 'Бот ещё настраивается. Попробуй отправить ответ чуть позже.');
+      return res.status(200).json({ ok: true });
+    }
+
+    if (plan.accepted) {
+      const night = plan.time === '00:00' ? 'Ночь на ' : '';
+      const dateAndTime = `${night}${formatDate(plan.date)}, ${plan.time}`;
+      await sendMessage(
+        token,
+        adminChatId,
+        `Новый ответ на приглашение 🎬\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
+      );
+      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
+    } else {
+      await sendMessage(token, adminChatId, 'Ответ на приглашение: в этот раз не получится.');
+      await sendMessage(token, chatId, 'Спасибо, что ответила ❤️');
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch {
+    console.error('Telegram message delivery failed.');
+    return res.status(502).json({ error: 'Telegram message delivery failed' });
+  }
+};
