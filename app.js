@@ -171,6 +171,15 @@ planForm.addEventListener('submit', (event) => {
     if (!selectedMovie) summary.textContent = 'Сначала выбери фильм или сериал, пожалуйста';
     return;
   }
+
+  // Re-check at submit time in case the page stayed open until the selected slot passed.
+  if (selectedDateTime().getTime() <= Date.now()) {
+    updateSummary();
+    sendButton.disabled = true;
+    summary.textContent = 'Это время уже прошло. Выбери будущую дату или время';
+    return;
+  }
+
   showFinal(null, true);
 });
 
