@@ -17,7 +17,7 @@ const movieCodes = {
   Чернобыль: 'c',
   '1+1': 'p',
 };
-const telegramBotUsername = 'priglosgazavybot';
+const telegramBotUsername = 'priglosgazavy2026_bot';
 
 function localDate(date) {
   const year = date.getFullYear();
