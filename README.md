@@ -59,7 +59,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    - `UPSTASH_REDIS_REST_TOKEN` — REST token этой базы.
    - `QSTASH_TOKEN` — токен QStash.
    - `REMINDER_CALLBACK_SECRET` — случайная длинная строка для проверки вызовов QStash.
-4. Переразверни Production в Vercel.
+4. Убедись, что в настройках Vercel включены System Environment Variables: обработчик берёт `VERCEL_PROJECT_PRODUCTION_URL` и отправляет callback на `/api/reminders` этого же Production-проекта. Это важно: адрес второго Vercel-проекта в коде не используется.
+5. Переразверни Production в Vercel.
 
 Бесплатный QStash ограничивает одно отложенное сообщение семью днями; приложение автоматически продлевает ожидание для более поздних дат. Не добавляй токены и секреты в код или GitHub и не отправляй их в чат.
 
