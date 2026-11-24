@@ -34,6 +34,13 @@ function selectedDate() {
   return date;
 }
 
+function selectedDateTime() {
+  const date = selectedDate();
+  const [hours, minutes] = timeInput.value.split(':').map(Number);
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
 function updateSummary() {
   const date = dateInput.value
     ? selectedDate().toLocaleDateString('ru-RU', {
@@ -42,15 +49,21 @@ function updateSummary() {
       month: 'long',
     })
     : '';
-  if (selectedMovie && date && timeInput.value) {
+  const hasSelection = Boolean(selectedMovie && dateInput.value && timeInput.value);
+  const isFuture = hasSelection && selectedDateTime().getTime() > Date.now();
+
+  if (selectedMovie && date && timeInput.value && isFuture) {
     const night = ['00:00', '01:00', '02:00'].includes(timeInput.value) ? 'Ночь на ' : '';
     summary.textContent = `Выбрано: ${selectedMovie}, ${night}${date} в ${timeInput.value}`;
+  } else if (hasSelection) {
+    summary.textContent = 'Это время уже прошло. Выбери будущую дату или время';
   } else if (selectedMovie) {
     summary.textContent = `Выбрано: ${selectedMovie}. Осталось выбрать день`;
   } else {
     summary.textContent = 'Сначала выбери фильм';
   }
-  sendButton.disabled = !(selectedMovie && dateInput.value && timeInput.value);
+
+  sendButton.disabled = !(hasSelection && isFuture);
   datePicks.querySelectorAll('.date-chip').forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.date === dateInput.value));
   });
@@ -158,6 +171,15 @@ planForm.addEventListener('submit', (event) => {
     if (!selectedMovie) summary.textContent = 'Сначала выбери фильм или сериал, пожалуйста';
     return;
   }
+
+  // Re-check at submit time in case the page stayed open until the selected slot passed.
+  if (selectedDateTime().getTime() <= Date.now()) {
+    updateSummary();
+    sendButton.disabled = true;
+    summary.textContent = 'Это время уже прошло. Выбери будущую дату или время';
+    return;
+  }
+
   showFinal(null, true);
 });
 

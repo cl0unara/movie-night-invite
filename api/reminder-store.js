@@ -1,13 +1,21 @@
 const DATA_KEY = 'movie-night:reminders:data';
 const MAX_QSTASH_DELAY_SECONDS = 6 * 24 * 60 * 60;
-const REMINDER_CALLBACK_URL = 'https://movie-night-invite-vercel.vercel.app/api/reminders';
+function getReminderCallbackUrl() {
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (typeof host !== 'string' || !/^[a-z0-9.-]+$/i.test(host)) {
+    throw new Error('VERCEL_PROJECT_PRODUCTION_URL is not configured');
+  }
+  return `https://${host}/api/reminders`;
+}
 
 function isConfigured() {
   return Boolean(
     process.env.UPSTASH_REDIS_REST_URL
     && process.env.UPSTASH_REDIS_REST_TOKEN
     && process.env.QSTASH_TOKEN
-    && process.env.REMINDER_CALLBACK_SECRET,
+    && process.env.REMINDER_CALLBACK_SECRET
+    && typeof process.env.VERCEL_PROJECT_PRODUCTION_URL === 'string'
+    && /^[a-z0-9.-]+$/i.test(process.env.VERCEL_PROJECT_PRODUCTION_URL),
   );
 }
 
@@ -42,7 +50,7 @@ async function scheduleDelivery(chatId, meetingAt, notBefore) {
   const callbackSecret = process.env.REMINDER_CALLBACK_SECRET;
   if (!token || !callbackSecret) throw new Error('Reminder delivery is not configured');
 
-  const response = await fetch(`https://qstash.upstash.io/v2/publish/${REMINDER_CALLBACK_URL}`, {
+  const response = await fetch(`https://qstash.upstash.io/v2/publish/${getReminderCallbackUrl()}`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,
