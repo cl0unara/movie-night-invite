@@ -94,6 +94,54 @@ test('webhook rejects requests without Telegram secret', async () => {
   }
 });
 
+test('Telegram API rejection is logged without exposing the bot token', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+    consoleError: console.error,
+  };
+  const logs = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      ok: false,
+      error_code: 400,
+      description: 'Bad Request: chat not found',
+    }),
+  });
+  console.error = (...args) => logs.push(args);
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        message: {
+          chat: { id: 555 },
+          text: '/start',
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 502);
+    assert.match(JSON.stringify(logs), /Bad Request: chat not found/);
+    assert.doesNotMatch(JSON.stringify(logs), /123:test-token/);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+    console.error = originalEnv.consoleError;
+  }
+});
+
 test('declined start payload notifies the owner and thanks the guest', async () => {
   const originalEnv = {
     token: process.env.TELEGRAM_BOT_TOKEN,

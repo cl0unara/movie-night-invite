@@ -12,6 +12,14 @@ async function telegramRequest(token, method, body) {
     throw new Error('Telegram returned an invalid response');
   }
   if (!response.ok || !result.ok) {
+    console.error('Telegram API request failed.', {
+      method,
+      status: response.status,
+      errorCode: Number.isInteger(result.error_code) ? result.error_code : undefined,
+      description: typeof result.description === 'string'
+        ? result.description.slice(0, 200)
+        : undefined,
+    });
     throw new Error('Telegram rejected the request');
   }
 }
