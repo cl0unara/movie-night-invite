@@ -1,4 +1,3 @@
-const emailAddress = '4ida2282@gmail.com';
 const movieButtons = [...document.querySelectorAll('.movie-card')];
 const planForm = document.querySelector('#plan-form');
 const dateInput = document.querySelector('#date');
@@ -57,19 +56,22 @@ function closeDialog(dialog) {
   if (dialog && dialog.open) dialog.close();
 }
 
-function emailHref(subject, message) {
-  return `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+function telegramShareHref(message) {
+  const share = new URL('https://t.me/share/url');
+  share.searchParams.set('url', location.href);
+  share.searchParams.set('text', message);
+  return share.toString();
 }
 
-function showFinal(dialog, subject, message, accepted) {
+function showFinal(dialog, message, accepted) {
   closeDialog(dialog);
   if (accepted) {
     document.querySelector('#thanks-copy').textContent =
-      'Ответ готов к отправке. Открой почту и нажми «Отправить».';
-    document.querySelector('#send-email').href = emailHref(subject, message);
+      'Откроется Telegram с готовым текстом. Выбери чат и нажми «Отправить».';
+    document.querySelector('#send-telegram').href = telegramShareHref(message);
     openDialog(thanks);
   } else {
-    document.querySelector('#decline-email').href = emailHref(subject, message);
+    document.querySelector('#decline-telegram').href = telegramShareHref(message);
     openDialog(declineThanks);
   }
 }
@@ -128,10 +130,9 @@ document.querySelector('#open-invitation').addEventListener('click', () => {
 });
 
 document.querySelector('#welcome-later').addEventListener('click', () => {
-  const subject = 'Ответ на приглашение';
-  const message = 'Спасибо за приглашение, но в этот раз не получится.';
+  const message = 'В этот раз не получится.';
   closeDialog(welcome);
-  showFinal(null, subject, message, false);
+  showFinal(null, message, false);
 });
 
 planForm.addEventListener('submit', (event) => {
@@ -148,13 +149,11 @@ planForm.addEventListener('submit', (event) => {
   });
   const night = timeInput.value === '00:00' ? 'Ночь на ' : '';
   const message = `Фильм: ${selectedMovie}.\nДата и время: ${night}${date}, ${timeInput.value}.\n\nЖду тебя, Газява ❤️`;
-  showFinal(null, 'Ответ на приглашение', message, true);
+  showFinal(null, message, true);
 });
 
 document.querySelector('#decline').addEventListener('click', () => {
-  const subject = 'Ответ на приглашение';
-  const message = 'Спасибо за приглашение, но в этот раз не получится.';
-  showFinal(null, subject, message, false);
+  showFinal(null, 'В этот раз не получится.', false);
 });
 
 document.querySelector('#close-thanks').addEventListener('click', () => {
