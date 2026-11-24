@@ -20,20 +20,27 @@ function localDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+function selectedDate() {
+  const date = new Date(`${dateInput.value}T12:00:00`);
+  if (timeInput.value === '00:00') date.setDate(date.getDate() + 1);
+  return date;
+}
+
 function updateSummary() {
   const date = dateInput.value
-    ? new Date(`${dateInput.value}T12:00:00`).toLocaleDateString('ru-RU', {
+    ? selectedDate().toLocaleDateString('ru-RU', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
     })
     : '';
   if (selectedMovie && date && timeInput.value) {
-    summary.textContent = `Твой выбор: ${selectedMovie}, ${date} в ${timeInput.value}`;
+    const night = timeInput.value === '00:00' ? 'Ночь на ' : '';
+    summary.textContent = `Выбрано: ${selectedMovie}, ${night}${date} в ${timeInput.value}`;
   } else if (selectedMovie) {
     summary.textContent = `Выбрано: ${selectedMovie}. Осталось выбрать день`;
   } else {
-    summary.textContent = 'Сначала выбери, что посмотреть';
+    summary.textContent = 'Сначала выбери фильм';
   }
   sendButton.disabled = !(selectedMovie && dateInput.value && timeInput.value);
   datePicks.querySelectorAll('.date-chip').forEach((button) => {
@@ -58,7 +65,7 @@ function showFinal(dialog, subject, message, accepted) {
   closeDialog(dialog);
   if (accepted) {
     document.querySelector('#thanks-copy').textContent =
-      'Открой письмо и нажми «Отправить», чтобы я узнал, какой фильм и время тебе подходят.';
+      'Ответ готов к отправке. Открой почту и нажми «Отправить».';
     document.querySelector('#send-email').href = emailHref(subject, message);
     openDialog(thanks);
   } else {
@@ -133,14 +140,15 @@ planForm.addEventListener('submit', (event) => {
     if (!selectedMovie) summary.textContent = 'Сначала выбери фильм или сериал, пожалуйста';
     return;
   }
-  const date = new Date(`${dateInput.value}T12:00:00`).toLocaleDateString('ru-RU', {
+  const date = selectedDate().toLocaleDateString('ru-RU', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
-  const message = `Давай посмотрим: ${selectedMovie}.\nМне удобно: ${date}, ${timeInput.value}.\nЖду тебя, Газява ❤️`;
-  showFinal(null, 'Наш киновечер 🍿', message, true);
+  const night = timeInput.value === '00:00' ? 'Ночь на ' : '';
+  const message = `Фильм: ${selectedMovie}.\nДата и время: ${night}${date}, ${timeInput.value}.\n\nЖду тебя, Газява ❤️`;
+  showFinal(null, 'Ответ на приглашение', message, true);
 });
 
 document.querySelector('#decline').addEventListener('click', () => {
