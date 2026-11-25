@@ -16,7 +16,7 @@ Module._load = originalLoad;
 beforeEach(() => { mockState = { movies: [], bookings: [] }; mockEtag = 'telegram-test-etag'; });
 
 function seedBooking({ userId = '555', movieId = 'interstellar', date = '2026-03-30', time = '22:15' } = {}) {
-  mockState.bookings.push({ userId, movieId, movieTitle: 'Интерстеллар', date, time, status: 'confirmed', adminNotifiedAt: new Date().toISOString(), guestNotifiedAt: new Date().toISOString(), cancellationAdminNotifiedAt: null, cancellationGuestNotifiedAt: null });
+  mockState.bookings.push({ id: 'abcdef1234', userId, movieId, movieTitle: 'Интерстеллар', date, time, status: 'confirmed', adminNotifiedAt: new Date().toISOString(), guestNotifiedAt: new Date().toISOString(), cancellationAdminNotifiedAt: null, cancellationGuestNotifiedAt: null });
 }
 
 function createResponse() {
@@ -430,7 +430,7 @@ test('inline cancellation button notifies the owner and removes itself', async (
       body: {
         callback_query: {
           id: 'callback-123',
-          data: 'cancel_c_2026-03-30_2230_555',
+          data: 'cancel_c_2026-03-30_2230_555_abcdef1234',
           from: { id: 555, first_name: 'Аня', username: 'anya' },
           message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
@@ -596,7 +596,7 @@ test('cancellation callback from another user is rejected without notifying the 
       body: {
         callback_query: {
           id: 'callback-forged',
-          data: 'cancel_i_2026-03-30_2215_555',
+          data: 'cancel_i_2026-03-30_2215_555_abcdef1234',
           from: { id: 999, first_name: 'Чужой пользователь' },
           message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
