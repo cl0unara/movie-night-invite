@@ -8,84 +8,170 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#160d27;color:#fff}
-    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#39204e,#160d27 65%);min-height:100vh;padding:24px 16px calc(36px + env(safe-area-inset-bottom))}
-    main{max-width:620px;margin:auto}.eyebrow{color:#c6a5e7;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
-    h1{font-size:32px;line-height:1.1;margin:8px 0}.intro{color:#d8cce4;line-height:1.5;margin:10px 0 24px}
-    .status{font-size:13px;color:#c7b2d9;margin:0 0 18px}.section{font-size:18px;margin:24px 0 12px}
-    .movie{background:#281939;border:1px solid #513967;border-radius:18px;padding:16px;margin:10px 0;display:flex;gap:12px;align-items:center}
-    .movie strong{display:block;font-size:16px}.movie small{color:#bda9cf}.actions{margin-left:auto;display:flex;flex-direction:column;gap:7px}
-    button{border:1px solid #76549a;background:#402657;color:#fff;border-radius:11px;padding:9px 11px;font-weight:600}
-    button:disabled{opacity:.5}.guest{font-size:12px;color:#bda9cf}.empty{color:#cdbadd;padding:12px}
-    .tag{font-size:11px;color:#e6d6f6;background:#53366b;padding:4px 7px;border-radius:20px;display:inline-block;margin-top:6px}
-    #error{color:#ffb4bd;white-space:pre-wrap}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px 14px calc(28px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at top,#39204e,#160d27 65%)}
+    main{max-width:680px;margin:auto}.eyebrow{color:#c6a5e7;font-size:11px;letter-spacing:.15em;text-transform:uppercase}
+    h1{font-size:30px;line-height:1.1;margin:7px 0}.intro{color:#d8cce4;line-height:1.45;margin:8px 0 20px;font-size:14px}
+    .status{font-size:12px;color:#c7b2d9;margin:0 0 14px}.section{font-size:18px;margin:24px 0 12px}
+    .catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+    .movie{position:relative;overflow:hidden;text-align:left;padding:0;border:1px solid #513967;border-radius:15px;background:#281939;color:#fff;min-width:0}
+    .movie.selected{border:2px solid #f5aeca;box-shadow:0 0 0 2px #f5aeca30}
+    .poster{display:block;width:100%;height:190px;object-fit:cover;background:#171622}
+    .movie-info{display:block;padding:10px 10px 12px}.movie strong{display:block;font-size:14px}.movie small{display:block;color:#bda9cf;margin-top:4px;font-size:11px}
+    .selected-mark{position:absolute;top:8px;right:8px;border-radius:30px;background:#f5aeca;color:#29172e;padding:4px 8px;font-size:11px;font-weight:800}
+    .plan,.shelf{margin-top:22px;padding:16px;border:1px solid #513967;border-radius:16px;background:#281939}
+    .section-title{font-size:17px;margin:0 0 14px}.subhead{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:16px 0 9px;color:#e9dfea}
+    .muted{font-size:10px;color:#bda9cf}
+    .dates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+    .date,.time,.action{border:1px solid #76549a;background:#402657;color:#fff;border-radius:10px;padding:9px 7px;font-size:12px}
+    .date[aria-pressed=true],.time[aria-pressed=true]{background:#f5aeca;color:#29172e;border-color:#f5aeca;font-weight:800}
+    .date b{display:block;font-size:18px}.date span{display:block;font-size:10px}
+    .other-date{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;color:#c7bbcc;font-size:11px}
+    input[type=date]{max-width:160px;padding:7px;border:1px solid #675b70;border-radius:8px;background:#201c2b;color:white;color-scheme:dark}
+    .times{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+    .time{min-height:38px}
+    .summary{min-height:20px;color:#f2bfd0;font-size:12px;margin:15px 0}
+    .send{width:100%;min-height:46px;background:#ffc1cf;color:#301d31;border:0;border-radius:11px;font-weight:800;font-size:14px}
+    .send:disabled{opacity:.4}
+    .movie-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #513967}
+    .movie-row:last-child{border:0}.movie-row img{width:42px;height:58px;object-fit:cover;border-radius:6px}
+    .movie-row strong{font-size:13px;display:block}.movie-row small{font-size:10px;color:#bda9cf}
+    .actions{margin-left:auto;display:flex;flex-direction:column;gap:6px}.action{padding:7px;font-size:10px}
+    .empty{font-size:12px;color:#cdbadd}.error{color:#ffb4bd;white-space:pre-wrap;font-size:12px}
+    @media(max-width:360px){.poster{height:160px}.times{grid-template-columns:repeat(3,minmax(0,1fr))}}
   </style>
 </head>
 <body>
 <main>
   <div class="eyebrow">Кино на этот вечер</div>
   <h1>Наш киноплан 🎬</h1>
-  <p class="intro">Выбираем, что посмотрим вместе. То, что уже посмотрели, останется в нашей истории.</p>
+  <p class="intro">Выбираем фильм, день и время для нашего вечера ❤️</p>
   <p class="status" id="status">Подключаем Telegram…</p>
-  <p id="error"></p>
-  <section><h2 class="section">В планах</h2><div id="catalog"></div></section>
-  <section><h2 class="section">Уже смотрели ❤️</h2><div id="watched"></div></section>
-  <section id="hidden-section" hidden><h2 class="section">Скрытые фильмы</h2><div id="hidden"></div></section>
+  <p class="error" id="error"></p>
+  <section>
+    <h2 class="section">Выбери фильм или сериал</h2>
+    <div class="catalog" id="catalog"></div>
+  </section>
+  <section class="plan">
+    <h2 class="section-title">Дата и время</h2>
+    <div class="subhead"><span>День</span><span class="muted">Ближайшая неделя</span></div>
+    <div class="dates" id="dates"></div>
+    <label class="other-date"><span>Или другая дата</span><input id="other-date" type="date"></label>
+    <div class="subhead"><span>Время</span><span class="muted">18:00–23:45</span></div>
+    <div class="times" id="times"></div>
+    <p class="summary" id="summary">Сначала выбери фильм</p>
+    <button class="send" id="send" disabled>Отправить выбор в бот</button>
+    <p class="muted">После подтверждения выбор придёт в наш Telegram-бот.</p>
+  </section>
+  <section class="shelf">
+    <h2 class="section-title">Уже смотрели ❤️</h2><div id="watched"></div>
+  </section>
+  <section class="shelf" id="admin-shelf" hidden>
+    <h2 class="section-title">Скрытые фильмы</h2><div id="hidden"></div>
+  </section>
 </main>
 <script>
 (() => {
-  const tg = window.Telegram && window.Telegram.WebApp;
-  const initData = tg && tg.initData;
-  const status = document.querySelector('#status');
-  const error = document.querySelector('#error');
-  const catalog = document.querySelector('#catalog');
-  const watched = document.querySelector('#watched');
-  const hidden = document.querySelector('#hidden');
-  const hiddenSection = document.querySelector('#hidden-section');
-  let state = null;
-  let role = 'guest';
-  if (tg) { tg.ready(); tg.expand(); }
-  const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  async function request(method, body) {
-    const response = await fetch('/api/miniapp-state', {
-      method, headers: {'content-type':'application/json','x-telegram-init-data':initData || ''},
-      ...(body ? {body:JSON.stringify({...body,initData})} : {})
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Ошибка соединения');
-    return data;
+  const tg=window.Telegram&&window.Telegram.WebApp;
+  const initData=tg&&tg.initData;
+  const $=id=>document.getElementById(id);
+  const status=$('status'),error=$('error'),catalog=$('catalog'),watched=$('watched'),hidden=$('hidden');
+  const dates=$('dates'),times=$('times'),otherDate=$('other-date'),summary=$('summary'),send=$('send');
+  const bot='priglosgazavy2026_bot';
+  const posters={
+    interstellar:'assets/interstellar.png',chernobyl:'assets/chernobyl.png','one-plus-one':'assets/one-plus-one.png',
+    'knives-out':'assets/knives-out.png',bodyguards:'assets/bodyguards.png',titanic:'assets/titanic.png','home-alone':'assets/home-alone.png'
+  };
+  const codes={interstellar:'i',chernobyl:'c','one-plus-one':'p','knives-out':'k',bodyguards:'t',titanic:'a','home-alone':'h'};
+  let state=null,role='guest',selected='',date='',time='20:00';
+  const pad=n=>String(n).padStart(2,'0');
+  const localDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parseDate=s=>new Date(s+'T12:00:00');
+  const fmtDate=s=>parseDate(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  if(tg){tg.ready();tg.expand();}
+  async function request(method,body){
+    const r=await fetch('/api/miniapp-state',{method,headers:{'content-type':'application/json','x-telegram-init-data':initData||''},...(body?{body:JSON.stringify({...body,initData})}:{})});
+    const data=await r.json();if(!r.ok)throw new Error(data.error||'Ошибка соединения');return data;
   }
-  function card(movie, mode) {
-    const admin = role === 'admin';
-    let buttons = '';
-    if (admin) {
-      if (mode === 'catalog') buttons = '<button data-action="watched" data-value="true">В просмотренное</button><button data-action="hidden" data-value="true">Скрыть</button>';
-      else if (mode === 'watched') buttons = '<button data-action="watched" data-value="false">Вернуть в планы</button>';
-      else buttons = '<button data-action="hidden" data-value="false">Вернуть в каталог</button>';
+  function updateSummary(){
+    const item=state&&state.movies.find(m=>m.id===selected);
+    const chosen=Boolean(item&&date&&time);
+    const future=chosen&&new Date(date+'T'+time+':00').getTime()>Date.now();
+    summary.textContent=!item?'Сначала выбери фильм':!date?'Выбери дату':!future?'Это время уже прошло — выбери другое':item.title+', '+fmtDate(date)+' в '+time;
+    send.disabled=!future;
+  }
+  function renderDates(){
+    const now=new Date();const today=localDate(now);
+    dates.innerHTML='';
+    for(let i=1;i<=7;i++){
+      const d=new Date();d.setDate(d.getDate()+i);const value=localDate(d);
+      const b=document.createElement('button');b.className='date';b.type='button';b.setAttribute('aria-pressed',String(date===value));
+      b.innerHTML='<span>'+d.toLocaleDateString('ru-RU',{weekday:'short'})+'</span><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('ru-RU',{month:'short'})+'</span>';
+      b.addEventListener('click',()=>{date=value;otherDate.value='';renderDates();updateSummary();});dates.append(b);
+      if(i===1&&!date)date=value;
     }
-    return '<article class="movie"><div><strong>'+esc(movie.title)+'</strong><small>'+movie.year+'</small>'+(mode==='watched'?'<div class="tag">Уже посмотрели</div>':'')+'</div><div class="actions">'+buttons+'</div></article>';
+    otherDate.min=today;otherDate.value=date&&!Array.from(dates.children).some((_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return localDate(d)===date;})?date:'';
   }
-  function render() {
-    const active = state.movies.filter(m => !m.hidden && !m.watched);
-    const seen = state.movies.filter(m => m.watched && !m.hidden);
-    const removed = state.movies.filter(m => m.hidden);
-    catalog.innerHTML = active.map(m=>card(m,'catalog')).join('') || '<p class="empty">Пока пусто</p>';
-    watched.innerHTML = seen.map(m=>card(m,'watched')).join('') || '<p class="empty">Здесь появятся просмотренные фильмы</p>';
-    hiddenSection.hidden = role !== 'admin';
-    hidden.innerHTML = removed.map(m=>card(m,'hidden')).join('') || '<p class="empty">Скрытых фильмов нет</p>';
-    document.querySelectorAll('button[data-action]').forEach(button => {
-      button.addEventListener('click', async () => {
-        const movie = button.closest('.movie').querySelector('strong').textContent;
-        const item = state.movies.find(m=>m.title===movie);
-        if (!item) return;
-        button.disabled = true;
-        try { state = await request('POST',{id:item.id,action:button.dataset.action,value:button.dataset.value==='true'}); render(); }
-        catch(e) { error.textContent=e.message; button.disabled=false; }
-      });
-    });
-    status.textContent = role==='admin' ? 'Режим администратора · изменения видны обоим' : 'Гостевой доступ · общий список';
+  function renderTimes(){
+    times.innerHTML='';
+    for(let m=18*60;m<24*60;m+=15){
+      const value=pad(Math.floor(m/60))+':'+pad(m%60),b=document.createElement('button');
+      b.type='button';b.className='time';b.textContent=value;b.setAttribute('aria-pressed',String(time===value));
+      b.addEventListener('click',()=>{time=value;renderTimes();updateSummary();});times.append(b);
+    }
   }
-  if (!initData) { status.textContent='Открой приложение через кнопку в Telegram-боте.'; error.textContent='Для проверки доступа нужен запуск внутри Telegram.'; return; }
-  request('GET').then(async data=>{state=data;role=data.role;render();if(role==='admin'){try{await fetch('/api/set-miniapp-menu',{method:'POST',headers:{'x-telegram-init-data':initData}});}catch(e){console.warn('Could not configure Telegram menu button');}}}).catch(e=>{status.textContent='Не удалось подключиться';error.textContent=e.message;});
+  function movieCard(movie){
+    const b=document.createElement('button');b.type='button';b.className='movie'+(selected===movie.id?' selected':'');
+    b.setAttribute('aria-pressed',String(selected===movie.id));
+    const img=document.createElement('img');img.className='poster';img.src=posters[movie.id]||'';img.alt='Постер: '+movie.title;img.loading='lazy';img.onerror=()=>{img.style.display='none';};
+    const info=document.createElement('span');info.className='movie-info';
+    const strong=document.createElement('strong');strong.textContent=movie.title;
+    const small=document.createElement('small');small.textContent=movie.year;
+    info.append(strong,small);b.append(img,info);
+    if(selected===movie.id){const mark=document.createElement('span');mark.className='selected-mark';mark.textContent='Выбрано';b.append(mark);}
+    b.addEventListener('click',()=>{selected=movie.id;renderCatalog();updateSummary();});
+    return b;
+  }
+  function renderCatalog(){
+    catalog.innerHTML='';
+    state.movies.filter(m=>!m.hidden&&!m.watched).forEach(m=>catalog.append(movieCard(m)));
+    if(!catalog.children.length)catalog.innerHTML='<p class="empty">Пока нет фильмов в планах</p>';
+  }
+  function adminRow(movie,mode){
+    const row=document.createElement('div');row.className='movie-row';
+    const img=document.createElement('img');img.src=posters[movie.id]||'';img.alt='';img.onerror=()=>img.style.display='none';
+    const info=document.createElement('div');const strong=document.createElement('strong');strong.textContent=movie.title;
+    const small=document.createElement('small');small.textContent=movie.year;info.append(strong,small);row.append(img,info);
+    if(role==='admin'){
+      const actions=document.createElement('div');actions.className='actions';
+      const add=(label,action,value)=>{const b=document.createElement('button');b.className='action';b.type='button';b.textContent=label;b.addEventListener('click',async()=>{b.disabled=true;try{state=await request('POST',{id:movie.id,action,value});renderAll();}catch(e){error.textContent=e.message;b.disabled=false;}});actions.append(b);};
+      if(mode==='watched')add('Вернуть в планы','watched',false);
+      else if(mode==='hidden')add('Вернуть в каталог','hidden',false);
+      else{add('Уже смотрели','watched',true);add('Скрыть','hidden',true);}
+      row.append(actions);
+    }
+    return row;
+  }
+  function renderAll(){
+    renderCatalog();
+    watched.innerHTML='';state.movies.filter(m=>m.watched&&!m.hidden).forEach(m=>watched.append(adminRow(m,'watched')));
+    if(!watched.children.length)watched.innerHTML='<p class="empty">Здесь появятся просмотренные фильмы</p>';
+    $('admin-shelf').hidden=role!=='admin';hidden.innerHTML='';
+    state.movies.filter(m=>m.hidden).forEach(m=>hidden.append(adminRow(m,'hidden')));
+    status.textContent=role==='admin'?'Режим администратора · общий список':'Гостевой доступ · можно выбирать фильм и время';
+  }
+  otherDate.addEventListener('change',()=>{date=otherDate.value;renderDates();updateSummary();});
+  send.addEventListener('click',()=>{
+    if(send.disabled)return;
+    const code=codes[selected];if(!code){error.textContent='Не удалось определить фильм';return;}
+    const payload='yes_'+code+'_'+date+'_'+time.replace(':','');
+    const url='https://t.me/'+bot+'?start='+encodeURIComponent(payload);
+    if(tg&&typeof tg.openTelegramLink==='function')tg.openTelegramLink(url);else window.location.href=url;
+  });
+  if(!initData){status.textContent='Открой приложение через меню Telegram-бота.';error.textContent='Telegram не передал данные авторизации.';return;}
+  request('GET').then(async data=>{
+    state=data;role=data.role;renderAll();renderDates();renderTimes();updateSummary();
+    if(role==='admin'){try{await fetch('/api/set-miniapp-menu',{method:'POST',headers:{'x-telegram-init-data':initData}});}catch(e){console.warn('Menu setup failed');}}
+  }).catch(e=>{status.textContent='Не удалось подключиться';error.textContent=e.message;});
 })();
 </script>
 </body>
