@@ -125,7 +125,7 @@ module.exports = async function handler(req, res) {
       await sendMessage(
         token,
         adminChatId,
-        `Отмена договорённости 💔\\nОт: ${callbackSender}\\nФильм: ${callbackPlan.movie}\\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
+        `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
       );
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
       await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
