@@ -129,12 +129,14 @@ module.exports = async function handler(req, res) {
       adminChatId,
       'Новая запись на киновечер 🎬\nОт: ' + sender + '\nФильм: ' + movie[0] + '\nДата и время: ' + dateAndTime,
     );
+    await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'adminNotifiedAt' });
     await sendMessage(
       token,
       auth.id,
       'Твой план на вечер готов! 💗\n\n🎬 ' + movie[0] + '\n📅 ' + dateAndTime + '\n\nДо встречи ❤️',
       { inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]] },
     );
+    await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'guestNotifiedAt' });
     return res.status(200).json({ ok: true, movie: movie[0], date, time });
   } catch (error) {
     const detail = error instanceof TelegramRequestError ? ' ' + error.message : '';
