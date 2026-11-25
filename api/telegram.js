@@ -58,7 +58,7 @@ function parsePlan(payload) {
     movie: MOVIES[match[2]],
     date: match[3],
     time: `${match[4].slice(0, 2)}:${match[4].slice(2)}`,
-    userId: match[5] && /^\\d+$/.test(match[5]) ? match[5] : null,
+    userId: match[5] && /^\d+$/.test(match[5]) ? match[5] : null,
     movieId: ({ i: 'interstellar', c: 'chernobyl', p: 'one-plus-one', k: 'knives-out', t: 'bodyguards', a: 'titanic', h: 'home-alone' })[match[2]],
   };
 }
