@@ -1,0 +1,39 @@
+name: QA
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-telegram-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check server JavaScript syntax
+        run: |
+          set -e
+          for file in api/*.js; do
+            node --check "$file"
+          done
+      - name: Check Mini App inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          const html = fs.readFileSync('miniapp.html', 'utf8');
+          const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+          if (scripts.length !== 1) throw new Error('Expected exactly one inline Mini App script');
+          new vm.Script(scripts[0][1], { filename: 'miniapp.html:inline-script' });
+          NODE
+      - name: Run Telegram webhook regression tests
+        run: node --test tests/telegram.test.js
