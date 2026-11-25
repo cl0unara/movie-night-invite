@@ -199,3 +199,24 @@ test('booking rejects a movie hidden or marked watched in shared state', async (
     assert.equal(requests.length, 0);
   });
 });
+
+
+test('repeated booking submission is idempotent and does not duplicate Telegram notifications', async () => {
+  await withBookingEnvironment(async requests => {
+    const fixedNow = Date.UTC(2026, 10, 25, 17, 0, 0);
+    Date.now = () => fixedNow;
+    const authDate = Math.floor(fixedNow / 1000);
+    const body = requestBody({ date: '2026-11-25', time: '20:00', offset: -120, authDate });
+    for (let i = 0; i < 2; i += 1) {
+      const response = createResponse();
+      await handler({
+        method: 'POST',
+        headers: { 'x-telegram-init-data': createInitData(USER, authDate) },
+        body,
+      }, response);
+      assert.equal(response.statusCode, 200);
+    }
+    assert.equal(mockBlobState.bookings.length, 1);
+    assert.equal(requests.length, 2);
+  });
+});
