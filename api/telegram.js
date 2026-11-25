@@ -121,14 +121,14 @@ module.exports = async function handler(req, res) {
       await sendMessage(
         token,
         adminChatId,
-        `Новый ответ на приглашение 🎬\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nДата и время: ${dateAndTime}`,
+        `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
       await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
     } else if (plan.cancelled) {
       await sendMessage(
         token,
         adminChatId,
-        `Отмена договорённости 💔\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nОтменённый план: ${formatDate(plan.date)}, ${plan.time}`,
+        `Отмена договорённости 💔\nОт: ${senderName}\nФильм: ${plan.movie}\nОтменённый план: ${formatDate(plan.date)}, ${plan.time}`,
       );
       await sendMessage(token, chatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
     } else {
