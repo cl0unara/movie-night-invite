@@ -33,8 +33,30 @@ async function telegramRequest(token, method, body) {
   }
 }
 
-async function sendMessage(token, chatId, text) {
-  await telegramRequest(token, 'sendMessage', { chat_id: chatId, text });
+async function sendMessage(token, chatId, text, replyMarkup) {
+  const body = { chat_id: chatId, text };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  await telegramRequest(token, 'sendMessage', body);
 }
 
-module.exports = { sendMessage, TelegramRequestError };
+async function answerCallbackQuery(token, callbackQueryId, text) {
+  await telegramRequest(token, 'answerCallbackQuery', {
+    callback_query_id: callbackQueryId,
+    text,
+  });
+}
+
+async function removeInlineKeyboard(token, chatId, messageId) {
+  await telegramRequest(token, 'editMessageReplyMarkup', {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: { inline_keyboard: [] },
+  });
+}
+
+module.exports = {
+  sendMessage,
+  answerCallbackQuery,
+  removeInlineKeyboard,
+  TelegramRequestError,
+};

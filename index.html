@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#201a33">
   <meta name="description" content="Приглашение выбрать фильм, дату и время.">
+  <meta property="og:title" content="Кино на вечер">
+  <meta property="og:description" content="Выбери фильм, дату и время для уютного вечера.">
+  <meta property="og:type" content="website">
   <title>Кино на вечер</title>
   <link rel="icon" href="assets/heart.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="enhancements.css">
   <script src="app.js" defer></script>
+  <script src="enhancements.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#invitation">Перейти к выбору фильма</a>
   <div class="hearts" aria-hidden="true">
     <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
   </div>
@@ -24,35 +30,61 @@
     <section class="intro" aria-labelledby="page-title">
       <p class="eyebrow"><span class="status-dot"></span> ПРИГЛАШЕНИЕ</p>
       <h1 id="page-title">Кино на<br><em>этот вечер</em></h1>
-      <p class="intro-copy">Интерстеллар, Чернобыль или 1+1. Выбери фильм, день и время.</p>
+      <p class="intro-copy">Интерстеллар, Достать ножи, Титаник, «Один дома» и другие варианты для уютного вечера.</p>
     </section>
 
     <section class="invite-card" id="invitation" aria-labelledby="invite-title">
       <div class="card-heading">
         <div>
           <p class="eyebrow">ВАРИАНТЫ</p>
-          <h2 id="invite-title">Выбери фильм</h2>
+          <h2 id="invite-title">Выбери фильм или сериал</h2>
         </div>
         <span class="popcorn" aria-hidden="true">🍿</span>
       </div>
 
-      <div class="movies" role="group" aria-label="Фильмы для выбора">
+      <div class="movies" id="movie-catalog" role="group" aria-label="Фильмы и сериалы для выбора">
         <button class="movie-card" type="button" data-movie="Интерстеллар" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/interstellar.png" alt="Постер фильма Интерстеллар" width="300" height="422"></span>
+          <span class="poster-wrap"><img src="assets/interstellar.png" loading="lazy" decoding="async" alt="Постер фильма Интерстеллар" width="300" height="422"></span>
           <span class="movie-info"><b>Интерстеллар</b><small>Фантастика · 2014</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
         <button class="movie-card" type="button" data-movie="Чернобыль" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/chernobyl.png" alt="Постер сериала Чернобыль" width="768" height="1152"></span>
+          <span class="poster-wrap"><img src="assets/chernobyl.png" loading="lazy" decoding="async" alt="Постер сериала Чернобыль" width="768" height="1152"></span>
           <span class="movie-info"><b>Чернобыль</b><small>Мини-сериал · 2019</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
         <button class="movie-card" type="button" data-movie="1+1" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/one-plus-one.png" alt="Постер фильма 1+1" width="185" height="273"></span>
+          <span class="poster-wrap"><img src="assets/one-plus-one.png" loading="lazy" decoding="async" alt="Постер фильма 1+1" width="185" height="273"></span>
           <span class="movie-info"><b>1+1</b><small>Комедия · 2011</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
+        <button class="movie-card" type="button" data-movie="Достать ножи" aria-pressed="false">
+          <span class="poster-placeholder poster-knives" aria-hidden="true">🔎</span>
+          <span class="movie-info"><b>Достать ножи</b><small>Детектив · 2019</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="Телохранители" aria-pressed="false">
+          <span class="poster-placeholder poster-bodyguards" aria-hidden="true">🥊</span>
+          <span class="movie-info"><b>Телохранители</b><small>Комедийный сериал · 2023</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="Титаник" aria-pressed="false">
+          <span class="poster-placeholder poster-titanic" aria-hidden="true">🚢</span>
+          <span class="movie-info"><b>Титаник</b><small>Романтическая драма · 1997</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="Один дома" aria-pressed="false">
+          <span class="poster-placeholder poster-home-alone" aria-hidden="true">🎄</span>
+          <span class="movie-info"><b>Один дома</b><small>Новогодняя комедия · 1990</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
       </div>
+      <section class="watched-section" id="watched-section" hidden aria-labelledby="watched-title">
+        <div class="watched-heading"><h3 id="watched-title">Уже посмотрели</h3><span id="watched-count">0</span></div>
+        <p class="watched-note">Отмеченные фильмы и сериалы будут храниться здесь на этом устройстве.</p>
+        <div class="movies watched-movies" id="watched-movies" role="group" aria-label="Уже просмотренные"></div>
+      </section>
+      <p class="movie-detail" id="movie-detail" aria-live="polite" hidden></p>
 
       <form class="plan" id="plan-form">
         <p class="plan-title">Дата и время</p>
@@ -62,20 +94,14 @@
           <span>Другая дата</span>
           <input id="date" name="date" type="date" required>
         </label>
-        <div class="time-heading"><span>Время</span><span class="date-note">00:00, 01:00 и 02:00 уже следующей ночью</span></div>
-        <div class="time-picks" id="time-picks" role="group" aria-label="Время просмотра">
-          <button type="button" class="time-chip" data-time="18:00" aria-pressed="false"><span aria-hidden="true">☀</span>18:00</button>
-          <button type="button" class="time-chip" data-time="19:00" aria-pressed="false"><span aria-hidden="true">◷</span>19:00</button>
-          <button type="button" class="time-chip selected" data-time="20:00" aria-pressed="true"><span aria-hidden="true">☾</span>20:00</button>
-          <button type="button" class="time-chip" data-time="21:00" aria-pressed="false"><span aria-hidden="true">☾</span>21:00</button>
-          <button type="button" class="time-chip" data-time="22:00" aria-pressed="false"><span aria-hidden="true">✦</span>22:00</button>
-          <button type="button" class="time-chip" data-time="23:00" aria-pressed="false"><span aria-hidden="true">✦</span>23:00</button>
-          <button type="button" class="time-chip" data-time="00:00" aria-pressed="false"><span aria-hidden="true">✦</span>00:00</button>
-          <button type="button" class="time-chip" data-time="01:00" aria-pressed="false"><span aria-hidden="true">✦</span>01:00</button>
-          <button type="button" class="time-chip" data-time="02:00" aria-pressed="false"><span aria-hidden="true">✦</span>02:00</button>
-        </div>
+        <div class="time-heading"><span>Время</span><span class="date-note">С 18:00 до 23:45 · шаг 15 минут</span></div>
+        <div class="time-picks" id="time-picks" role="group" aria-label="Время просмотра"></div>
         <input id="time" name="time" type="hidden" value="20:00">
         <p class="selection-summary" id="summary" aria-live="polite">Сначала выбери фильм</p>
+        <div class="cancel-plan" id="cancel-plan" hidden>
+          <span>Если планы изменятся, договорённость можно отменить и я получу сообщение.</span>
+          <a class="button button-quiet" id="cancel-plan-button" href="">Отказаться от договорённости</a>
+        </div>
         <div class="form-actions">
           <button class="button button-main" id="send-answer" type="submit" disabled>Отправить ответ <span aria-hidden="true">♡</span></button>
           <button class="button button-quiet" id="decline" type="button">Не подойдёт</button>
@@ -104,7 +130,8 @@
       <p class="eyebrow" id="thanks-eyebrow">ОТВЕТ</p>
       <h2 id="thanks-title">Жду тебя,<br><em>Газява ❤️</em></h2>
       <p id="thanks-copy">Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.</p>
-      <a class="button button-main" id="send-telegram" href="">Открыть бота</a>
+      <a class="button button-main" id="send-telegram" href="">Подтвердить в боте</a>
+      <a class="button button-quiet" id="cancel-telegram" href="">Отказаться от договорённости</a>
       <button class="button button-quiet" id="close-thanks" type="button">Закрыть</button>
     </div>
   </dialog>

@@ -18,6 +18,9 @@ jobs:
       - name: Check frontend and API syntax
         run: |
           node --check app.js
+          node --check enhancements.js
           for file in api/*.js; do
             node --check "$file"
           done
+      - name: Run API tests
+        run: node --test tests/*.test.js

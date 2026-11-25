@@ -3,12 +3,20 @@ const planForm = document.querySelector('#plan-form');
 const dateInput = document.querySelector('#date');
 const datePicks = document.querySelector('#date-picks');
 const timeInput = document.querySelector('#time');
-const timeButtons = [...document.querySelectorAll('.time-chip')];
+const timePicks = document.querySelector('#time-picks');
+let timeButtons = [];
 const sendButton = document.querySelector('#send-answer');
 const summary = document.querySelector('#summary');
 const welcome = document.querySelector('#welcome');
 const thanks = document.querySelector('#thanks');
 const declineThanks = document.querySelector('#decline-thanks');
+const cancelPlanPanel = document.querySelector('#cancel-plan');
+const cancelPlanButton = document.querySelector('#cancel-plan-button');
+const savedPlanKey = 'movie-night-invite-plan';
+const watchedMoviesKey = 'movie-night-invite-watched';
+const watchedShelf = document.querySelector('#watched-movies');
+const watchedSection = document.querySelector('#watched-section');
+const watchedCount = document.querySelector('#watched-count');
 
 let selectedMovie = '';
 
@@ -16,6 +24,10 @@ const movieCodes = {
   Интерстеллар: 'i',
   Чернобыль: 'c',
   '1+1': 'p',
+  'Достать ножи': 'k',
+  'Телохранители': 't',
+  'Титаник': 'a',
+  'Один дома': 'h',
 };
 const telegramBotUsername = 'priglosgazavy2026_bot';
 
@@ -28,9 +40,6 @@ function localDate(date) {
 
 function selectedDate() {
   const date = new Date(`${dateInput.value}T12:00:00`);
-  if (['00:00', '01:00', '02:00'].includes(timeInput.value)) {
-    date.setDate(date.getDate() + 1);
-  }
   return date;
 }
 
@@ -53,8 +62,7 @@ function updateSummary() {
   const isFuture = hasSelection && selectedDateTime().getTime() > Date.now();
 
   if (selectedMovie && date && timeInput.value && isFuture) {
-    const night = ['00:00', '01:00', '02:00'].includes(timeInput.value) ? 'Ночь на ' : '';
-    summary.textContent = `Выбрано: ${selectedMovie}, ${night}${date} в ${timeInput.value}`;
+    summary.textContent = `Выбрано: ${selectedMovie}, ${date} в ${timeInput.value}`;
   } else if (hasSelection) {
     summary.textContent = 'Это время уже прошло. Выбери будущую дату или время';
   } else if (selectedMovie) {
@@ -82,6 +90,32 @@ function telegramBotHref(payload) {
   return `https://t.me/${telegramBotUsername}?start=${encodeURIComponent(payload)}`;
 }
 
+function renderSavedPlan(payload) {
+  if (typeof payload !== 'string' || !/^yes_[icp]_\d{4}-\d{2}-\d{2}_\d{4}$/.test(payload)) {
+    cancelPlanPanel.hidden = true;
+    return;
+  }
+  const cancelHref = telegramBotHref(payload.replace(/^yes_/, 'cancel_'));
+  cancelPlanButton.href = cancelHref;
+  document.querySelector('#cancel-telegram').href = cancelHref;
+  cancelPlanPanel.hidden = false;
+}
+
+function clearSavedPlan() {
+  try {
+    localStorage.removeItem(savedPlanKey);
+  } catch {
+    // The Telegram cancellation link still works if browser storage is unavailable.
+  }
+  cancelPlanPanel.hidden = true;
+}
+
+try {
+  renderSavedPlan(localStorage.getItem(savedPlanKey));
+} catch {
+  // The planning flow remains usable when browser storage is unavailable.
+}
+
 function selectedPlanPayload() {
   const movieCode = movieCodes[selectedMovie];
   if (!movieCode) throw new Error(`Unsupported movie selected: ${selectedMovie}`);
@@ -94,8 +128,14 @@ function showFinal(dialog, accepted) {
   if (accepted) {
     document.querySelector('#thanks-copy').textContent =
       'Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.';
-    document.querySelector('#send-telegram').href =
-      telegramBotHref(selectedPlanPayload());
+    const payload = selectedPlanPayload();
+    document.querySelector('#send-telegram').href = telegramBotHref(payload);
+    try {
+      localStorage.setItem(savedPlanKey, payload);
+    } catch {
+      // The cancellation action remains available in the confirmation dialog.
+    }
+    renderSavedPlan(payload);
     openDialog(thanks);
   } else {
     document.querySelector('#decline-telegram').href = telegramBotHref('no');
@@ -127,15 +167,92 @@ for (let offset = 1; offset <= 7; offset += 1) {
 }
 datePicks.innerHTML = dateOptions.join('');
 
-movieButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    selectedMovie = button.dataset.movie;
+const timeOptions = [];
+for (let minutes = 18 * 60; minutes < 24 * 60; minutes += 15) {
+  const hours = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const minutePart = String(minutes % 60).padStart(2, '0');
+  const time = `${hours}:${minutePart}`;
+  const selected = time === '20:00';
+  timeOptions.push(`
+    <button type="button" class="time-chip${selected ? ' selected' : ''}"
+      data-time="${time}" aria-pressed="${selected}">
+      <span aria-hidden="true">${minutes < 19 * 60 ? '☀' : minutes < 21 * 60 ? '◷' : '☾'}</span>${time}
+    </button>`);
+}
+timePicks.innerHTML = timeOptions.join('');
+timeButtons = [...timePicks.querySelectorAll('.time-chip')];
+
+function updateWatchedShelf() {
+  const count = watchedShelf.children.length;
+  watchedCount.textContent = String(count);
+  watchedSection.hidden = count === 0;
+}
+
+function saveWatchedMovies() {
+  const watched = [...watchedShelf.querySelectorAll('.movie-card')].map((card) => card.dataset.movie);
+  try {
+    localStorage.setItem(watchedMoviesKey, JSON.stringify(watched));
+  } catch {
+    // The shelf still works for the current page session.
+  }
+  updateWatchedShelf();
+}
+
+function setWatched(card, watched) {
+  const entry = card.closest('.movie-entry');
+  const toggle = entry.querySelector('.watched-toggle');
+  if (watched) {
+    if (selectedMovie === card.dataset.movie) {
+      selectedMovie = '';
+      card.setAttribute('aria-pressed', 'false');
+      updateSummary();
+    }
+    card.disabled = true;
+    toggle.textContent = 'Вернуть в каталог';
+    toggle.setAttribute('aria-label', `Вернуть «${card.dataset.movie}» в каталог`);
+    watchedShelf.append(entry);
+  } else {
+    card.disabled = false;
+    toggle.textContent = 'Уже смотрели';
+    toggle.setAttribute('aria-label', `Отметить «${card.dataset.movie}» просмотренным`);
+    document.querySelector('#movie-catalog').append(entry);
+  }
+  saveWatchedMovies();
+}
+
+movieButtons.forEach((card) => {
+  const entry = document.createElement('div');
+  entry.className = 'movie-entry';
+  card.parentNode.insertBefore(entry, card);
+  entry.append(card);
+  const toggle = document.createElement('button');
+  toggle.className = 'watched-toggle';
+  toggle.type = 'button';
+  toggle.textContent = 'Уже смотрели';
+  toggle.setAttribute('aria-label', `Отметить «${card.dataset.movie}» просмотренным`);
+  toggle.addEventListener('click', () => setWatched(card, !card.disabled));
+  entry.append(toggle);
+  card.addEventListener('click', () => {
+    if (card.disabled) return;
+    selectedMovie = card.dataset.movie;
     movieButtons.forEach((item) => {
-      item.setAttribute('aria-pressed', String(item === button));
+      item.setAttribute('aria-pressed', String(item === card));
     });
     updateSummary();
   });
 });
+
+try {
+  const watched = JSON.parse(localStorage.getItem(watchedMoviesKey) || '[]');
+  if (Array.isArray(watched)) {
+    movieButtons.forEach((card) => {
+      if (watched.includes(card.dataset.movie)) setWatched(card, true);
+    });
+  }
+} catch {
+  // Ignore invalid or unavailable local storage and keep the full catalog.
+}
+updateWatchedShelf();
 
 datePicks.addEventListener('click', (event) => {
   const button = event.target.closest('[data-date]');
@@ -182,6 +299,9 @@ planForm.addEventListener('submit', (event) => {
 document.querySelector('#decline').addEventListener('click', () => {
   showFinal(null, false);
 });
+
+cancelPlanButton.addEventListener('click', clearSavedPlan);
+document.querySelector('#cancel-telegram').addEventListener('click', clearSavedPlan);
 
 document.querySelector('#close-thanks').addEventListener('click', () => {
   closeDialog(thanks);
