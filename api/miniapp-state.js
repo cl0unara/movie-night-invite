@@ -31,7 +31,8 @@ function validateInitData(initData, botToken) {
   const b = Buffer.from(hash, 'hex');
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   const authDate = Number(params.get('auth_date'));
-  if (!Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) return null;
+  const now = Date.now() / 1000;
+  if (!Number.isFinite(authDate) || authDate > now + 30 || now - authDate > 86400) return null;
   let user;
   try { user = JSON.parse(params.get('user') || 'null'); } catch { return null; }
   if (!user || !Number.isSafeInteger(user.id)) return null;
