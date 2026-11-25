@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#201a33">
   <meta name="description" content="Приглашение выбрать фильм, дату и время.">
+  <meta property="og:title" content="Кино на вечер">
+  <meta property="og:description" content="Выбери фильм, дату и время для уютного вечера.">
+  <meta property="og:type" content="website">
   <title>Кино на вечер</title>
   <link rel="icon" href="assets/heart.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="enhancements.css">
   <script src="app.js" defer></script>
+  <script src="enhancements.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#invitation">Перейти к выбору фильма</a>
   <div class="hearts" aria-hidden="true">
     <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
   </div>
@@ -38,21 +44,22 @@
 
       <div class="movies" role="group" aria-label="Фильмы для выбора">
         <button class="movie-card" type="button" data-movie="Интерстеллар" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/interstellar.png" alt="Постер фильма Интерстеллар" width="300" height="422"></span>
+          <span class="poster-wrap"><img src="assets/interstellar.png" loading="lazy" decoding="async" alt="Постер фильма Интерстеллар" width="300" height="422"></span>
           <span class="movie-info"><b>Интерстеллар</b><small>Фантастика · 2014</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
         <button class="movie-card" type="button" data-movie="Чернобыль" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/chernobyl.png" alt="Постер сериала Чернобыль" width="768" height="1152"></span>
+          <span class="poster-wrap"><img src="assets/chernobyl.png" loading="lazy" decoding="async" alt="Постер сериала Чернобыль" width="768" height="1152"></span>
           <span class="movie-info"><b>Чернобыль</b><small>Мини-сериал · 2019</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
         <button class="movie-card" type="button" data-movie="1+1" aria-pressed="false">
-          <span class="poster-wrap"><img src="assets/one-plus-one.png" alt="Постер фильма 1+1" width="185" height="273"></span>
+          <span class="poster-wrap"><img src="assets/one-plus-one.png" loading="lazy" decoding="async" alt="Постер фильма 1+1" width="185" height="273"></span>
           <span class="movie-info"><b>1+1</b><small>Комедия · 2011</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
       </div>
+      <p class="movie-detail" id="movie-detail" aria-live="polite" hidden></p>
 
       <form class="plan" id="plan-form">
         <p class="plan-title">Дата и время</p>
