@@ -1,14 +1,32 @@
 async function telegramRequest(token, method, body) {
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    const cause = error && typeof error === 'object' && error.cause
+      && typeof error.cause === 'object'
+      ? error.cause
+      : null;
+    console.error('Telegram API transport failed.', {
+      method,
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+      causeCode: cause && typeof cause.code === 'string' ? cause.code : undefined,
+    });
+    throw new Error('Telegram API request failed');
+  }
 
   let result;
   try {
     result = await response.json();
   } catch {
+    console.error('Telegram API returned an invalid response.', {
+      method,
+      status: response.status,
+    });
     throw new Error('Telegram returned an invalid response');
   }
   if (!response.ok || !result.ok) {
