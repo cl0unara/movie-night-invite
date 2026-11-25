@@ -108,7 +108,7 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
   };
   const logs = [];
   process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
-  delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
   process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   global.fetch = async () => ({
     ok: false,
@@ -129,7 +129,7 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
       body: {
         message: {
           chat: { id: 555 },
-          text: '/start',
+          text: '/start no',
         },
       },
     }, response);
@@ -156,7 +156,7 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
   };
   const logs = [];
   process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
-  delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
   process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   global.fetch = async () => {
     const cause = new Error('Connection reset');
@@ -173,7 +173,7 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
       body: {
         message: {
           chat: { id: 555 },
-          text: '/start',
+          text: '/start no',
         },
       },
     }, response);
@@ -396,14 +396,16 @@ test('inline cancellation button notifies the owner and removes itself', async (
 
     assert.equal(response.statusCode, 200);
     assert.equal(requests.length, 4);
-    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
-    assert.match(requests[0].body.text, /Отмена договорённости/);
-    assert.match(requests[0].body.text, /Чернобыль/);
-    assert.match(requests[0].body.text, /22:30/);
-    assert.equal(requests[1].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
-    assert.deepEqual(requests[1].body.reply_markup, { inline_keyboard: [] });
-    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
-    assert.equal(requests[2].body.callback_query_id, 'callback-123');
+    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
+    assert.equal(requests[0].body.callback_query_id, 'callback-123');
+    assert.match(requests[0].body.text, /Отменяем запись/);
+    assert.equal(requests[1].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
+    assert.equal(requests[1].body.chat_id, '7001');
+    assert.match(requests[1].body.text, /Отмена договорённости/);
+    assert.match(requests[1].body.text, /Чернобыль/);
+    assert.match(requests[1].body.text, /22:30/);
+    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
+    assert.deepEqual(requests[2].body.reply_markup, { inline_keyboard: [] });
     assert.equal(requests[3].body.chat_id, 555);
     assert.equal(requests[3].body.text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
   } finally {
@@ -446,6 +448,51 @@ test('new movie and series payloads are accepted and named correctly', async () 
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
     process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('plain /start stays silent and installs the Mini App chat menu button', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    miniAppUrl: process.env.TELEGRAM_MINI_APP_URL,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  process.env.TELEGRAM_MINI_APP_URL = 'https://movie-night-invite-vercel.vercel.app/miniapp.html';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: { message: { chat: { id: 555 }, text: '/start' } },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].url, /setChatMenuButton$/);
+    assert.equal(requests[0].body.chat_id, 555);
+    assert.deepEqual(requests[0].body.menu_button, {
+      type: 'web_app',
+      text: 'Miniapp',
+      web_app: { url: 'https://movie-night-invite-vercel.vercel.app/miniapp.html' },
+    });
+    assert.equal(requests.some(request => /sendMessage$/.test(request.url)), false);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    process.env.TELEGRAM_MINI_APP_URL = originalEnv.miniAppUrl;
     global.fetch = originalEnv.fetch;
   }
 });
