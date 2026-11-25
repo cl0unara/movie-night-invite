@@ -97,6 +97,7 @@
   const dates=$('dates'),times=$('times'),otherDate=$('other-date'),summary=$('summary'),send=$('send');
   const filters=$('filters'),adminMovies=$('admin-movies');
   let activeCategory='Все';
+  let activeTab='guest';
   const categories={'interstellar':'Фантастика','chernobyl':'Сериал','one-plus-one':'Комедия','knives-out':'Детектив','bodyguards':'Комедия','titanic':'Романтика','home-alone':'Семейное'};
   const categoryNames=['Все','Фантастика','Детектив','Комедия','Романтика','Семейное','Сериал'];
   const bot='priglosgazavy2026_bot';
@@ -214,6 +215,7 @@
     catch(e){error.textContent=e.message;}
   }
   function setTab(tab){
+    activeTab=tab;
     const admin=tab==='admin';
     $('guest-view').hidden=admin;$('admin-view').hidden=!admin;
     $('guest-tab').setAttribute('aria-selected',String(!admin));
@@ -224,8 +226,7 @@
     watched.innerHTML='';state.movies.filter(m=>m.watched&&!m.hidden).forEach(m=>watched.append(adminRow(m,'watched')));
     if(!watched.children.length)watched.innerHTML='<p class="empty">Здесь появятся просмотренные фильмы</p>';
     $('tabs').hidden=role!=='admin';
-    $('admin-view').hidden=true;
-    $('guest-view').hidden=false;
+    if(role==='admin'&&activeTab==='admin'){renderAdmin();setTab('admin');}else setTab('guest');
     status.textContent=role==='admin'?'Режим администратора · доступ только для тебя':'Гостевой доступ · выбирай фильм и время';
   }
   $('guest-tab').addEventListener('click',()=>setTab('guest'));
