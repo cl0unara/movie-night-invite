@@ -10,6 +10,9 @@ const summary = document.querySelector('#summary');
 const welcome = document.querySelector('#welcome');
 const thanks = document.querySelector('#thanks');
 const declineThanks = document.querySelector('#decline-thanks');
+const cancelPlanPanel = document.querySelector('#cancel-plan');
+const cancelPlanButton = document.querySelector('#cancel-plan-button');
+const savedPlanKey = 'movie-night-invite-plan';
 
 let selectedMovie = '';
 
@@ -79,6 +82,32 @@ function telegramBotHref(payload) {
   return `https://t.me/${telegramBotUsername}?start=${encodeURIComponent(payload)}`;
 }
 
+function renderSavedPlan(payload) {
+  if (typeof payload !== 'string' || !/^yes_[icp]_\\d{4}-\\d{2}-\\d{2}_\\d{4}$/.test(payload)) {
+    cancelPlanPanel.hidden = true;
+    return;
+  }
+  const cancelHref = telegramBotHref(payload.replace(/^yes_/, 'cancel_'));
+  cancelPlanButton.href = cancelHref;
+  document.querySelector('#cancel-telegram').href = cancelHref;
+  cancelPlanPanel.hidden = false;
+}
+
+function clearSavedPlan() {
+  try {
+    localStorage.removeItem(savedPlanKey);
+  } catch {
+    // The Telegram cancellation link still works if browser storage is unavailable.
+  }
+  cancelPlanPanel.hidden = true;
+}
+
+try {
+  renderSavedPlan(localStorage.getItem(savedPlanKey));
+} catch {
+  // The planning flow remains usable when browser storage is unavailable.
+}
+
 function selectedPlanPayload() {
   const movieCode = movieCodes[selectedMovie];
   if (!movieCode) throw new Error(`Unsupported movie selected: ${selectedMovie}`);
@@ -91,10 +120,14 @@ function showFinal(dialog, accepted) {
   if (accepted) {
     document.querySelector('#thanks-copy').textContent =
       'Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.';
-    document.querySelector('#send-telegram').href =
-      telegramBotHref(selectedPlanPayload());
-    document.querySelector('#cancel-telegram').href =
-      telegramBotHref(selectedPlanPayload().replace(/^yes_/, 'cancel_'));
+    const payload = selectedPlanPayload();
+    document.querySelector('#send-telegram').href = telegramBotHref(payload);
+    try {
+      localStorage.setItem(savedPlanKey, payload);
+    } catch {
+      // The cancellation action remains available in the confirmation dialog.
+    }
+    renderSavedPlan(payload);
     openDialog(thanks);
   } else {
     document.querySelector('#decline-telegram').href = telegramBotHref('no');
@@ -196,6 +229,9 @@ planForm.addEventListener('submit', (event) => {
 document.querySelector('#decline').addEventListener('click', () => {
   showFinal(null, false);
 });
+
+cancelPlanButton.addEventListener('click', clearSavedPlan);
+document.querySelector('#cancel-telegram').addEventListener('click', clearSavedPlan);
 
 document.querySelector('#close-thanks').addEventListener('click', () => {
   closeDialog(thanks);
