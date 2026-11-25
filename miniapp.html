@@ -280,11 +280,15 @@
     hidden.innerHTML='';state.movies.filter(m=>m.hidden).forEach(m=>hidden.append(adminRow(m,'hidden')));
   }
   async function setMovieFlag(id,action,value){
+    const controls=[...adminMovies.querySelectorAll('button')];
+    controls.forEach(button=>button.disabled=true);
     error.textContent='';
     try{state=await request('POST',{id,action,value});renderAll();}
     catch(e){
       if(e.status===409){try{state=await request('GET');renderAll();}catch{}}
       error.textContent=e.status===409?'Каталог уже изменился в другом окне. Обновил данные — повтори действие.':e.message;
+    }finally{
+      controls.forEach(button=>{if(button.isConnected)button.disabled=false;});
     }
   }
   async function refreshSharedState(){
