@@ -388,8 +388,8 @@ test('inline cancellation button notifies the owner and removes itself', async (
         callback_query: {
           id: 'callback-123',
           data: 'cancel_c_2026-03-30_2230',
-          from: { first_name: 'Аня', username: 'anya' },
-          message: { message_id: 42, chat: { id: 555 } },
+          from: { id: 555, first_name: 'Аня', username: 'anya' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
       },
     }, response);
@@ -493,6 +493,52 @@ test('plain /start stays silent and installs the Mini App chat menu button', asy
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
     process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     process.env.TELEGRAM_MINI_APP_URL = originalEnv.miniAppUrl;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('cancellation callback from another user is rejected without notifying the owner', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'callback-forged',
+          data: 'cancel_i_2026-03-30_2215',
+          from: { id: 999, first_name: 'Чужой пользователь' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].url, /answerCallbackQuery$/);
+    assert.match(requests[0].body.text, /Не удалось отменить/);
+    assert.equal(requests.some(request => /sendMessage$/.test(request.url)), false);
+    assert.equal(requests.some(request => /editMessageReplyMarkup$/.test(request.url)), false);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
