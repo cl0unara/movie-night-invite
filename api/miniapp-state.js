@@ -23,10 +23,10 @@ function validateInitData(initData, botToken) {
   params.delete('hash');
   params.delete('signature');
   const checkString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value)
     .join('\n');
-  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const secret = createHmac('sha256', botToken).update('WebAppData').digest();
   const calculated = createHmac('sha256', secret).update(checkString).digest('hex');
   const a = Buffer.from(calculated, 'hex');
   const b = Buffer.from(hash, 'hex');
