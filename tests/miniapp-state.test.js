@@ -21,6 +21,7 @@ Module._load = function loadWithBlobMock(request, parent, isMain) {
     return {
       get: async () => {
         if (mockGetError) throw mockGetError;
+        if (mockState === null) return null;
         return {
         statusCode: 200,
         stream: new Response(JSON.stringify(mockState)).body,
@@ -143,4 +144,14 @@ test('shared-state storage outage does not silently reset the catalog', async ()
   mockGetError = null;
   assert.equal(response.statusCode, 500);
   assert.deepEqual(response.body, { error: 'Could not update shared state' });
+});
+
+
+test('missing shared state starts from the default catalog', async () => {
+  mockState = null;
+  const response = await call('GET', ADMIN_ID);
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.role, 'admin');
+  assert.equal(response.body.movies.length, 7);
+  assert.equal(response.body.movies[0].id, 'interstellar');
 });
