@@ -67,7 +67,7 @@ module.exports = async function handler(req, res) {
       // Hidden entries are admin-only data; do not expose them in guest API responses.
       const visibleState = isAdmin
         ? current.state
-        : { ...current.state, movies: current.state.movies.filter(movie => !movie.hidden) };
+        : { movies: current.state.movies.filter(movie => !movie.hidden) };
       return res.status(200).json({ ...visibleState, role: isAdmin ? 'admin' : 'guest' });
     }
     if (!isAdmin) return res.status(403).json({ error: 'Admin access required' });
