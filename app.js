@@ -3,7 +3,8 @@ const planForm = document.querySelector('#plan-form');
 const dateInput = document.querySelector('#date');
 const datePicks = document.querySelector('#date-picks');
 const timeInput = document.querySelector('#time');
-const timeButtons = [...document.querySelectorAll('.time-chip')];
+const timePicks = document.querySelector('#time-picks');
+let timeButtons = [];
 const sendButton = document.querySelector('#send-answer');
 const summary = document.querySelector('#summary');
 const welcome = document.querySelector('#welcome');
@@ -28,9 +29,6 @@ function localDate(date) {
 
 function selectedDate() {
   const date = new Date(`${dateInput.value}T12:00:00`);
-  if (['00:00', '01:00', '02:00'].includes(timeInput.value)) {
-    date.setDate(date.getDate() + 1);
-  }
   return date;
 }
 
@@ -53,8 +51,7 @@ function updateSummary() {
   const isFuture = hasSelection && selectedDateTime().getTime() > Date.now();
 
   if (selectedMovie && date && timeInput.value && isFuture) {
-    const night = ['00:00', '01:00', '02:00'].includes(timeInput.value) ? 'Ночь на ' : '';
-    summary.textContent = `Выбрано: ${selectedMovie}, ${night}${date} в ${timeInput.value}`;
+    summary.textContent = `Выбрано: ${selectedMovie}, ${date} в ${timeInput.value}`;
   } else if (hasSelection) {
     summary.textContent = 'Это время уже прошло. Выбери будущую дату или время';
   } else if (selectedMovie) {
@@ -96,6 +93,8 @@ function showFinal(dialog, accepted) {
       'Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.';
     document.querySelector('#send-telegram').href =
       telegramBotHref(selectedPlanPayload());
+    document.querySelector('#cancel-telegram').href =
+      telegramBotHref(selectedPlanPayload().replace(/^yes_/, 'cancel_'));
     openDialog(thanks);
   } else {
     document.querySelector('#decline-telegram').href = telegramBotHref('no');
@@ -126,6 +125,21 @@ for (let offset = 1; offset <= 7; offset += 1) {
     </button>`);
 }
 datePicks.innerHTML = dateOptions.join('');
+
+const timeOptions = [];
+for (let minutes = 18 * 60; minutes < 24 * 60; minutes += 15) {
+  const hours = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const minutePart = String(minutes % 60).padStart(2, '0');
+  const time = `${hours}:${minutePart}`;
+  const selected = time === '20:00';
+  timeOptions.push(`
+    <button type="button" class="time-chip${selected ? ' selected' : ''}"
+      data-time="${time}" aria-pressed="${selected}">
+      <span aria-hidden="true">${minutes < 19 * 60 ? '☀' : minutes < 21 * 60 ? '◷' : '☾'}</span>${time}
+    </button>`);
+}
+timePicks.innerHTML = timeOptions.join('');
+timeButtons = [...timePicks.querySelectorAll('.time-chip')];
 
 movieButtons.forEach((button) => {
   button.addEventListener('click', () => {
