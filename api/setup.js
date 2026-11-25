@@ -8,16 +8,20 @@ function secretsMatch(expected, received) {
     && timingSafeEqual(expectedBuffer, receivedBuffer);
 }
 
-function getDeploymentHost(req) {
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const value = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    || forwardedHost
-    || req.headers.host
+function getDeploymentHost() {
+  const configured = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    || process.env.TELEGRAM_MINI_APP_URL
     || process.env.VERCEL_URL;
-  if (typeof value !== 'string') return null;
+  if (typeof configured !== 'string' || !configured.trim()) return null;
 
-  const host = value.split(',')[0].trim().replace(/^https?:\/\//, '').split('/')[0];
-  return /^[a-z0-9.-]+$/i.test(host) ? host : null;
+  try {
+    const candidate = configured.includes('://') ? configured : 'https://' + configured;
+    const url = new URL(candidate);
+    if (url.protocol !== 'https:' || url.username || url.password) return null;
+    return /^[a-z0-9.-]+$/i.test(url.hostname) ? url.hostname.toLowerCase() : null;
+  } catch {
+    return null;
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -41,7 +45,7 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const host = getDeploymentHost(req);
+  const host = getDeploymentHost();
   if (!host) return res.status(503).json({ error: 'Could not determine deployment host' });
 
   try {
