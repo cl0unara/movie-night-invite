@@ -5,13 +5,13 @@ const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
 const STATE_PATH = 'movie-night/shared-state.json';
 const DEFAULT_STATE = {
   movies: [
-    { id: 'interstellar', title: 'Интерстеллар', year: 2014, watched: false, hidden: false },
-    { id: 'chernobyl', title: 'Чернобыль', year: 2019, watched: false, hidden: false },
-    { id: 'one-plus-one', title: '1+1', year: 2011, watched: false, hidden: false },
-    { id: 'knives-out', title: 'Достать ножи', year: 2019, watched: false, hidden: false },
-    { id: 'bodyguards', title: 'Телохранители', year: 2023, watched: false, hidden: false },
-    { id: 'titanic', title: 'Титаник', year: 1997, watched: false, hidden: false },
-    { id: 'home-alone', title: 'Один дома', year: 1990, watched: false, hidden: false }
+    { id: 'interstellar', title: 'Интерстеллар', year: 2014, category: 'Фантастика', watched: false, hidden: false },
+    { id: 'chernobyl', title: 'Чернобыль', year: 2019, category: 'Сериал', watched: false, hidden: false },
+    { id: 'one-plus-one', title: '1+1', year: 2011, category: 'Комедия', watched: false, hidden: false },
+    { id: 'knives-out', title: 'Достать ножи', year: 2019, category: 'Детектив', watched: false, hidden: false },
+    { id: 'bodyguards', title: 'Телохранители', year: 2023, category: 'Комедия', watched: false, hidden: false },
+    { id: 'titanic', title: 'Титаник', year: 1997, category: 'Романтика', watched: false, hidden: false },
+    { id: 'home-alone', title: 'Один дома', year: 1990, category: 'Семейное', watched: false, hidden: false }
   ]
 };
 
@@ -64,18 +64,34 @@ module.exports = async function handler(req, res) {
     if (req.method === 'GET') return res.status(200).json({ ...current.state, role: isAdmin ? 'admin' : 'guest' });
     if (!isAdmin) return res.status(403).json({ error: 'Admin access required' });
     const body = req.body || {};
-    const id = typeof body.id === 'string' ? body.id : '';
     const action = body.action;
-    if (!current.state.movies.some(movie => movie.id === id)) return res.status(404).json({ error: 'Movie not found' });
-    const next = {
-      ...current.state,
-      movies: current.state.movies.map(movie => movie.id !== id ? movie : ({
-        ...movie,
-        ...(action === 'watched' ? { watched: Boolean(body.value) } : {}),
-        ...(action === 'hidden' ? { hidden: Boolean(body.value) } : {})
-      }))
-    };
-    if (!['watched', 'hidden'].includes(action) || typeof body.value !== 'boolean') return res.status(400).json({ error: 'Invalid action' });
+    let next;
+    if (action === 'reorder') {
+      if (!Array.isArray(body.order) || body.order.length !== current.state.movies.length) {
+        return res.status(400).json({ error: 'Invalid movie order' });
+      }
+      const existingIds = current.state.movies.map(movie => movie.id).sort();
+      const requestedIds = body.order.slice().sort();
+      if (existingIds.some((id, index) => id !== requestedIds[index]) || new Set(body.order).size !== body.order.length) {
+        return res.status(400).json({ error: 'Invalid movie order' });
+      }
+      const byId = new Map(current.state.movies.map(movie => [movie.id, movie]));
+      next = { ...current.state, movies: body.order.map(id => byId.get(id)) };
+    } else {
+      const id = typeof body.id === 'string' ? body.id : '';
+      if (!current.state.movies.some(movie => movie.id === id)) return res.status(404).json({ error: 'Movie not found' });
+      if (!['watched', 'hidden'].includes(action) || typeof body.value !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+      next = {
+        ...current.state,
+        movies: current.state.movies.map(movie => movie.id !== id ? movie : ({
+          ...movie,
+          ...(action === 'watched' ? { watched: body.value } : {}),
+          ...(action === 'hidden' ? { hidden: body.value } : {})
+        }))
+      };
+    }
     await put(STATE_PATH, JSON.stringify(next), {
       access: 'private',
       contentType: 'application/json',
