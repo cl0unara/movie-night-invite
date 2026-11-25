@@ -260,7 +260,13 @@
   if(!initData){status.textContent='Открой приложение через меню Telegram-бота.';error.textContent='Telegram не передал данные авторизации.';return;}
   request('GET').then(async data=>{
     state=data;role=data.role;renderAll();renderDates();renderTimes();updateSummary();
-    if(role==='admin'){try{await fetch('/api/set-miniapp-menu',{method:'POST',headers:{'x-telegram-init-data':initData}});}catch(e){console.warn('Menu setup failed');}}
+    if(role==='admin'){
+      try{
+        const menuResponse=await fetch('/api/set-miniapp-menu',{method:'POST',headers:{'x-telegram-init-data':initData}});
+        const menuResult=await menuResponse.json().catch(()=>null);
+        if(!menuResponse.ok||!menuResult?.menuVerified)console.warn('Telegram Mini App menu button was not confirmed.');
+      }catch(e){console.warn('Telegram Mini App menu setup failed.');}
+    }
   }).catch(e=>{status.textContent='Не удалось подключиться';error.textContent=e.message;});
 })();
 </script>

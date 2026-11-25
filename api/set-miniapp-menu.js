@@ -61,7 +61,21 @@ module.exports = async function handler(req, res) {
       console.error('Telegram Mini App menu button setup failed.');
       return res.status(502).json({ error: 'Telegram could not set the Mini App menu button' });
     }
-    return res.status(200).json({ ok: true, webhook: true, menu: true });
+
+    // Confirm Telegram stored the global default button, not just accepted the write.
+    const verifyResponse = await fetch(`https://api.telegram.org/bot${token}/getChatMenuButton`);
+    const verifyResult = await verifyResponse.json();
+    const configuredButton = verifyResult.result;
+    const menuVerified = verifyResponse.ok
+      && verifyResult.ok
+      && configuredButton?.type === 'web_app'
+      && configuredButton?.text === 'Miniapp'
+      && configuredButton?.web_app?.url === appUrl;
+    if (!menuVerified) {
+      console.error('Telegram Mini App menu button verification failed.');
+      return res.status(502).json({ error: 'Telegram did not confirm the Mini App menu button' });
+    }
+    return res.status(200).json({ ok: true, webhook: true, menu: true, menuVerified: true });
   } catch {
     console.error('Telegram Mini App menu or webhook setup failed.');
     return res.status(502).json({ error: 'Telegram could not configure the Mini App' });
