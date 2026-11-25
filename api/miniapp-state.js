@@ -1,7 +1,7 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
 const { get, put, head } = require('@vercel/blob');
 
-const ADMIN_ID = '903292061';
+const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
 const STATE_PATH = 'movie-night/shared-state.json';
 const DEFAULT_STATE = {
   movies: [
