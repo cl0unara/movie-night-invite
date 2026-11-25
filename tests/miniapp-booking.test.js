@@ -8,11 +8,7 @@ Module._load = function loadWithBlobMock(request, parent, isMain) {
   if (request === '@vercel/blob') {
     return {
       get: async () => {
-        if (mockBlobState === null) {
-          const error = new Error('Blob not found');
-          error.status = 404;
-          throw error;
-        }
+        if (mockBlobState === null) return null;
         return { statusCode: 200, stream: new Response(JSON.stringify(mockBlobState)).body };
       },
     };
