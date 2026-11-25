@@ -451,10 +451,11 @@ test('inline cancellation button notifies the owner and removes itself', async (
     assert.match(requests[1].body.text, /Отмена договорённости/);
     assert.match(requests[1].body.text, /Чернобыль/);
     assert.match(requests[1].body.text, /22:30/);
-    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
-    assert.deepEqual(requests[2].body.reply_markup, { inline_keyboard: [] });
-    assert.equal(requests[3].body.chat_id, 555);
-    assert.equal(requests[3].body.text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
+    assert.equal(requests[2].body.chat_id, 555);
+    assert.equal(requests[2].body.text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+    assert.equal(requests[3].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
+    assert.deepEqual(requests[3].body.reply_markup, { inline_keyboard: [] });
 
     const beforeRepeat = requests.length;
     const repeat = createResponse();
