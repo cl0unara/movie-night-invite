@@ -1,6 +1,8 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
+const { get } = require('@vercel/blob');
 const { sendMessage, TelegramRequestError } = require('./telegram-client');
 
+const STATE_PATH = 'movie-night/shared-state.json';
 const MOVIES = {
   interstellar: ['Интерстеллар', 'i'],
   chernobyl: ['Чернобыль', 'c'],
@@ -45,6 +47,21 @@ function formatDate(value) {
   }).format(new Date(value + 'T12:00:00Z'));
 }
 
+async function isMovieAvailable(movieId) {
+  try {
+    const result = await get(STATE_PATH, { access: 'private' });
+    if (!result || result.statusCode !== 200) return Object.prototype.hasOwnProperty.call(MOVIES, movieId);
+    const parsed = JSON.parse(await new Response(result.stream).text());
+    if (!parsed || !Array.isArray(parsed.movies)) throw new Error('Invalid shared movie state');
+    return parsed.movies.some(movie => movie && movie.id === movieId && !movie.hidden && !movie.watched);
+  } catch (error) {
+    if (error && (error.status === 404 || error.statusCode === 404)) {
+      return Object.prototype.hasOwnProperty.call(MOVIES, movieId);
+    }
+    throw error;
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -62,6 +79,14 @@ module.exports = async function handler(req, res) {
   if (!movie || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
     return res.status(400).json({ error: 'Проверь выбранный фильм, дату и время.' });
   }
+  let movieAvailable;
+  try {
+    movieAvailable = await isMovieAvailable(body.movieId);
+  } catch {
+    return res.status(503).json({ error: 'Не удалось проверить каталог. Попробуй ещё раз позже.' });
+  }
+  if (!movieAvailable) return res.status(409).json({ error: 'Этот фильм больше недоступен. Обнови каталог и выбери другой.' });
+
   const [year, month, day] = date.split('-').map(Number);
   const parsedDate = new Date(Date.UTC(year, month - 1, day));
   if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
