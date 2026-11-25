@@ -1,6 +1,7 @@
 const { timingSafeEqual } = require('node:crypto');
 const {
   sendMessage,
+  setChatMenuButton,
   answerCallbackQuery,
   removeInlineKeyboard,
   TelegramRequestError,
@@ -152,9 +153,19 @@ module.exports = async function handler(req, res) {
   if (!start) return res.status(200).json({ ok: true });
 
   const payload = start[1];
-  // Plain /start stays silent. Telegram Bot API cannot force-open a Web App
-  // from a message update; users launch it from the persistent Mini App menu.
-  if (!payload) return res.status(200).json({ ok: true });
+  // Keep /start silent and expose the Mini App directly in this chat's menu.
+  // Telegram does not provide a Bot API method to force-open a Web App from /start.
+  if (!payload) {
+    const miniAppUrl = process.env.TELEGRAM_MINI_APP_URL;
+    if (miniAppUrl && /^https:\/\/[a-z0-9.-]+(?:\/.*)?$/i.test(miniAppUrl)) {
+      try {
+        await setChatMenuButton(token, chatId, miniAppUrl);
+      } catch (error) {
+        console.error('Could not set the chat Mini App menu button.');
+      }
+    }
+    return res.status(200).json({ ok: true });
+  }
 
   try {
     const plan = parsePlan(payload);
