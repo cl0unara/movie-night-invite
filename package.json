@@ -1,0 +1,11 @@
+{
+  "name": "movie-night-invite",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.3.0"
+  }
+}
