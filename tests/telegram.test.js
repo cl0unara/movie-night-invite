@@ -72,10 +72,8 @@ test('accepted start payload notifies the owner and replies to the guest', async
     assert.match(requests[0].body.text, /30 марта 2026.*22:15/);
     assert.equal(requests[1].body.chat_id, 555);
     assert.match(requests[1].body.text, /Жду тебя, Газява/);
-    assert.deepEqual(requests[1].body.reply_markup.inline_keyboard[0][0], {
-      text: 'Отменить запись',
-      callback_data: 'cancel_p_2026-03-30_2215_555',
-    });
+    assert.equal(requests[1].body.reply_markup.inline_keyboard[0][0].text, 'Отменить запись');
+    assert.match(requests[1].body.reply_markup.inline_keyboard[0][0].callback_data, /^cancel_p_2026-03-30_2215_555_[0-9a-f]{10}$/);
   } finally {
     if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
     else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
@@ -465,7 +463,7 @@ test('inline cancellation button notifies the owner and removes itself', async (
       body: {
         callback_query: {
           id: 'callback-duplicate',
-          data: 'cancel_c_2026-03-30_2230_555',
+          data: 'cancel_c_2026-03-30_2230_555_abcdef1234',
           from: { id: 555, first_name: 'Аня', username: 'anya' },
           message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
@@ -653,7 +651,7 @@ test('failed cancellation keeps the inline button available and sends a retry hi
       body: {
         callback_query: {
           id: 'callback-retry',
-          data: 'cancel_i_2026-03-30_2215_555',
+          data: 'cancel_i_2026-03-30_2215_555_abcdef1234',
           from: { id: 555, first_name: 'Аня' },
           message: { message_id: 43, chat: { id: 555, type: 'private' } },
         },
