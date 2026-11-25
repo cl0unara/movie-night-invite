@@ -1,6 +1,7 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
 const { get } = require('@vercel/blob');
 const { sendMessage, TelegramRequestError } = require('./telegram-client');
+const { createBooking, markBookingNotification } = require('./booking-store');
 
 const STATE_PATH = 'movie-night/shared-state.json';
 const MOVIES = {
@@ -110,9 +111,19 @@ module.exports = async function handler(req, res) {
   }
 
   const dateAndTime = formatDate(date) + ', ' + time;
-  const cancelPayload = 'cancel_' + movie[1] + '_' + date + '_' + time.replace(':', '');
+  const cancelPayload = 'cancel_' + movie[1] + '_' + date + '_' + time.replace(':', '') + '_' + auth.id;
   const sender = auth.name + (auth.username ? ' (' + auth.username + ')' : '');
   try {
+    await createBooking({
+      userId: auth.id,
+      movieId: body.movieId,
+      movieTitle: movie[0],
+      date,
+      time,
+      timeZoneOffsetMinutes: offset,
+      guestName: auth.name,
+      guestUsername: auth.username,
+    });
     await sendMessage(
       token,
       adminChatId,
