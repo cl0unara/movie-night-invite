@@ -42,7 +42,7 @@ test('accepted start payload notifies the owner and replies to the guest', async
         message: {
           chat: { id: 555 },
           from: { first_name: 'Аня', username: 'anya' },
-          text: '/start yes_p_2026-03-30_0000',
+          text: '/start yes_p_2026-03-30_2215',
         },
       },
     }, response);
@@ -52,7 +52,7 @@ test('accepted start payload notifies the owner and replies to the guest', async
     assert.equal(requests[0].body.chat_id, '7001');
     assert.match(requests[0].body.text, /От: Аня \(@anya\)/);
     assert.match(requests[0].body.text, /Фильм: 1\+1/);
-    assert.match(requests[0].body.text, /Ночь на .*30 марта 2026.*00:00/);
+    assert.match(requests[0].body.text, /30 марта 2026.*22:15/);
     assert.equal(requests[1].body.chat_id, 555);
     assert.equal(requests[1].body.text, 'Жду тебя, Газява ❤️');
   } finally {
@@ -269,7 +269,7 @@ test('declined start payload notifies the owner and thanks the guest', async () 
   }
 });
 
-test('one and two in the morning are forwarded as overnight choices', async () => {
+test('quarter-hour evening times are forwarded to the owner', async () => {
   const originalEnv = {
     token: process.env.TELEGRAM_BOT_TOKEN,
     adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
@@ -286,7 +286,7 @@ test('one and two in the morning are forwarded as overnight choices', async () =
   };
 
   try {
-    for (const time of ['0100', '0200']) {
+    for (const time of ['1800', '1815', '2215', '2230', '2245', '2345']) {
       const response = createResponse();
       await handler({
         method: 'POST',
@@ -301,8 +301,54 @@ test('one and two in the morning are forwarded as overnight choices', async () =
       assert.equal(response.statusCode, 200);
     }
 
-    assert.match(messages[0], /Ночь на .*01:00/);
-    assert.match(messages[2], /Ночь на .*02:00/);
+    assert.match(messages[0], /18:00/);
+    assert.match(messages[2], /22:15/);
+    assert.match(messages[4], /22:45/);
+    assert.match(messages[10], /23:45/);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+test('cancellation payload notifies the owner with the cancelled plan', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        message: {
+          chat: { id: 555 },
+          from: { first_name: 'Аня' },
+          text: '/start cancel_i_2026-03-30_2215',
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 2);
+    assert.match(requests[0].text, /Отмена договорённости/);
+    assert.match(requests[0].text, /Интерстеллар/);
+    assert.match(requests[0].text, /22:15/);
+    assert.equal(requests[1].text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
