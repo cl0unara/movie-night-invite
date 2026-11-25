@@ -302,8 +302,8 @@ test('quarter-hour evening times are forwarded to the owner', async () => {
     }
 
     assert.match(messages[0], /18:00/);
-    assert.match(messages[2], /22:15/);
-    assert.match(messages[4], /22:45/);
+    assert.match(messages[4], /22:15/);
+    assert.match(messages[8], /22:45/);
     assert.match(messages[10], /23:45/);
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
