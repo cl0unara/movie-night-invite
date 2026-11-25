@@ -153,3 +153,6 @@
 .movie-card:disabled { cursor: default; opacity: .78; }
 .movie-card:disabled:hover { transform: none; }
 .watched-movies:empty { display: none; }
+
+.poster-titanic { background: radial-gradient(ellipse at 50% 30%, #527b92, #172536 72%); }
+.poster-home-alone { background: radial-gradient(ellipse at 50% 30%, #a45d35, #34202b 72%); }
