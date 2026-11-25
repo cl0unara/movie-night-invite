@@ -1,4 +1,4 @@
-const { createHmac, timingSafeEqual } = require('node:crypto');
+const { validateTelegramInitData } = require('./telegram-auth');
 const { get, put, head } = require('@vercel/blob');
 
 const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
@@ -14,29 +14,6 @@ const DEFAULT_STATE = {
     { id: 'home-alone', title: 'Один дома', year: 1990, category: 'Семейное', watched: false, hidden: false }
   ]
 };
-
-function validateInitData(initData, botToken) {
-  if (typeof initData !== 'string' || !initData || initData.length > 8192) return null;
-  const params = new URLSearchParams(initData);
-  const hash = params.get('hash');
-  if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) return null;
-  params.delete('hash');
-  const checkString = [...params.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([key, value]) => key + '=' + value)
-    .join('\n');
-  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const calculated = createHmac('sha256', secret).update(checkString).digest('hex');
-  const a = Buffer.from(calculated, 'hex');
-  const b = Buffer.from(hash, 'hex');
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const authDate = Number(params.get('auth_date'));
-  if (!Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) return null;
-  let user;
-  try { user = JSON.parse(params.get('user') || 'null'); } catch { return null; }
-  if (!user || !Number.isSafeInteger(user.id)) return null;
-  return { id: String(user.id), firstName: String(user.first_name || '') };
-}
 
 async function readState() {
   try {
@@ -56,7 +33,7 @@ module.exports = async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token || !process.env.BLOB_READ_WRITE_TOKEN) return res.status(503).json({ error: 'Mini App storage is not configured' });
-  const auth = validateInitData(req.headers['x-telegram-init-data'] || (req.body && req.body.initData), token);
+  const auth = validateTelegramInitData(req.headers['x-telegram-init-data'], token);
   if (!auth) return res.status(401).json({ error: 'Open this app from the Telegram bot' });
   const isAdmin = auth.id === ADMIN_ID;
   try {
