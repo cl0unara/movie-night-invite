@@ -11,6 +11,11 @@ const MOVIES = {
   c: 'Чернобыль',
   p: '1+1',
 };
+const MOVIE_CODES = {
+  Интерстеллар: 'i',
+  Чернобыль: 'c',
+  '1+1': 'p',
+};
 function isAllowedTime(time) {
   if (!/^\d{4}$/.test(time)) return false;
   const hours = Number(time.slice(0, 2));
@@ -111,7 +116,7 @@ module.exports = async function handler(req, res) {
       await sendMessage(
         token,
         adminChatId,
-        `Отмена договорённости 💔\\nОт: ${callbackSender}\\nФильм: ${callbackPlan.movie}\\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
+        `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
       );
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
       await answerCallbackQuery(token, callback.id, 'Запись отменена.');
@@ -162,8 +167,8 @@ module.exports = async function handler(req, res) {
         adminChatId,
         `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
-      const cancelPayload = `cancel_${Object.keys({ Интерстеллар: 'i', Чернобыль: 'c', '1+1': 'p' }).find((title) => title === plan.movie) ? ({ Интерстеллар: 'i', Чернобыль: 'c', '1+1': 'p' })[plan.movie] : 'i'}_${plan.date}_${plan.time.replace(':', '')}`;
-      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️\\nЕсли планы изменятся, запись можно отменить кнопкой ниже.', {
+      const cancelPayload = `cancel_${MOVIE_CODES[plan.movie]}_${plan.date}_${plan.time.replace(':', '')}`;
+      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️\nЕсли планы изменятся, запись можно отменить кнопкой ниже.', {
         inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]],
       });
     } else if (plan.cancelled) {
