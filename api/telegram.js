@@ -44,7 +44,7 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^(yes|cancel)_([icpktah])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_([0-9a-z]+))?$/.exec(payload);
+  const match = /^(yes|cancel)_([icpktah])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_([0-9a-z]+)(?:_([0-9a-f]{10}))?)?$/.exec(payload);
   if (!match || !isAllowedTime(match[4])) return null;
 
   const date = new Date(`${match[3]}T00:00:00Z`);
@@ -140,6 +140,7 @@ module.exports = async function handler(req, res) {
         movieId: callbackPlan.movieId,
         date: callbackPlan.date,
         time: callbackPlan.time,
+        bookingId: callbackPlan.bookingId,
       });
       if (result.status === 'not_found') {
         await sendMessage(token, callbackChatId, 'Не нашёл активную запись для отмены. Если планы изменились, напиши мне напрямую ❤️');
@@ -153,11 +154,11 @@ module.exports = async function handler(req, res) {
           adminChatId,
           `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
         );
-        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationAdminNotifiedAt' });
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationAdminNotifiedAt', bookingId: booking.id });
       }
       if (!booking.cancellationGuestNotifiedAt) {
         await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
-        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationGuestNotifiedAt' });
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationGuestNotifiedAt', bookingId: booking.id });
       }
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
       return res.status(200).json({ ok: true });
@@ -227,17 +228,17 @@ module.exports = async function handler(req, res) {
           adminChatId,
           `Новый ответ на приглашение 🎬\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nДата и время: ${dateAndTime}`,
         );
-        await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'adminNotifiedAt' });
+        await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'adminNotifiedAt', bookingId: booking.id });
       }
       if (!booking.guestNotifiedAt) {
-        const cancelPayload = `cancel_${MOVIE_CODES[plan.movie]}_${plan.date}_${plan.time.replace(':', '')}_${chatId}`;
+        const cancelPayload = `cancel_${MOVIE_CODES[plan.movie]}_${plan.date}_${plan.time.replace(':', '')}_${chatId}_${booking.id}`;
         await sendMessage(token, chatId, 'Жду тебя, Газява ❤️\\nЕсли планы изменятся, запись можно отменить кнопкой ниже.', {
           inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]],
         });
-        await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'guestNotifiedAt' });
+        await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'guestNotifiedAt', bookingId: booking.id });
       }
     } else if (plan.cancelled) {
-      const result = await cancelBooking({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time });
+      const result = await cancelBooking({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, bookingId: plan.bookingId });
       if (result.status === 'not_found') {
         await sendMessage(token, chatId, 'Не нашёл активную запись для отмены. Если планы изменились, напиши мне напрямую ❤️');
       } else {
@@ -248,11 +249,11 @@ module.exports = async function handler(req, res) {
             adminChatId,
             `Отмена договорённости 💔\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nОтменённый план: ${formatDate(plan.date)}, ${plan.time}`,
           );
-          await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'cancellationAdminNotifiedAt' });
+          await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'cancellationAdminNotifiedAt', bookingId: booking.id });
         }
         if (!booking.cancellationGuestNotifiedAt) {
           await sendMessage(token, chatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
-          await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'cancellationGuestNotifiedAt' });
+          await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'cancellationGuestNotifiedAt', bookingId: booking.id });
         }
       }
     } else {
