@@ -1,5 +1,5 @@
 const { validateTelegramInitData } = require('./telegram-auth');
-const { get, put, head } = require('@vercel/blob');
+const { get, put } = require('@vercel/blob');
 
 const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
 const STATE_PATH = 'movie-night/shared-state.json';
