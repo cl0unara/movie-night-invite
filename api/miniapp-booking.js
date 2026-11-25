@@ -111,7 +111,6 @@ module.exports = async function handler(req, res) {
   }
 
   const dateAndTime = formatDate(date) + ', ' + time;
-  const cancelPayload = 'cancel_' + movie[1] + '_' + date + '_' + time.replace(':', '') + '_' + auth.id;
   const sender = auth.name + (auth.username ? ' (' + auth.username + ')' : '');
   try {
     const booking = await createBooking({
@@ -124,13 +123,14 @@ module.exports = async function handler(req, res) {
       guestName: auth.name,
       guestUsername: auth.username,
     });
+    const cancelPayload = 'cancel_' + movie[1] + '_' + date + '_' + time.replace(':', '') + '_' + auth.id + '_' + booking.id;
     if (!booking.adminNotifiedAt) {
       await sendMessage(
         token,
         adminChatId,
         'Новая запись на киновечер 🎬\\nОт: ' + sender + '\\nФильм: ' + movie[0] + '\\nДата и время: ' + dateAndTime,
       );
-      await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'adminNotifiedAt' });
+      await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'adminNotifiedAt', bookingId: booking.id });
     }
     if (!booking.guestNotifiedAt) {
       await sendMessage(
@@ -139,7 +139,7 @@ module.exports = async function handler(req, res) {
         'Твой план на вечер готов! 💗\\n\\n🎬 ' + movie[0] + '\\n📅 ' + dateAndTime + '\\n\\nДо встречи ❤️',
         { inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]] },
       );
-      await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'guestNotifiedAt' });
+      await markBookingNotification({ userId: auth.id, movieId: body.movieId, date, time, field: 'guestNotifiedAt', bookingId: booking.id });
     }
     return res.status(200).json({ ok: true, movie: movie[0], date, time });
   } catch (error) {
