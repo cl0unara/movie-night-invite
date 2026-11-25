@@ -11,6 +11,7 @@ const DEFAULT_MOVIES = [
 ];
 let mockState = structuredClone({ movies: DEFAULT_MOVIES });
 let mockEtag = 'etag-1';
+let mockGetError = null;
 let putCalls = 0;
 
 process.env.ADMIN_TELEGRAM_ID = String(ADMIN_ID);
@@ -18,11 +19,14 @@ const originalLoad = Module._load;
 Module._load = function loadWithBlobMock(request, parent, isMain) {
   if (request === '@vercel/blob') {
     return {
-      get: async () => ({
+      get: async () => {
+        if (mockGetError) throw mockGetError;
+        return {
         statusCode: 200,
         stream: new Response(JSON.stringify(mockState)).body,
         blob: { etag: mockEtag },
-      }),
+      };
+      },
       put: async (_path, content, options) => {
         putCalls += 1;
         if (options.ifMatch && options.ifMatch !== mockEtag) {
@@ -130,4 +134,13 @@ test('tampered Telegram initData cannot access shared state', async () => {
     headers: { 'x-telegram-init-data': createInitData(ADMIN_ID) + 'tampered' },
   }, response);
   assert.equal(response.statusCode, 401);
+});
+
+
+test('shared-state storage outage does not silently reset the catalog', async () => {
+  mockGetError = Object.assign(new Error('Blob unavailable'), { status: 503 });
+  const response = await call('GET', ADMIN_ID);
+  mockGetError = null;
+  assert.equal(response.statusCode, 500);
+  assert.deepEqual(response.body, { error: 'Could not update shared state' });
 });
