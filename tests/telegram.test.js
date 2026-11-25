@@ -388,8 +388,8 @@ test('inline cancellation button notifies the owner and removes itself', async (
         callback_query: {
           id: 'callback-123',
           data: 'cancel_c_2026-03-30_2230',
-          from: { first_name: 'Аня', username: 'anya' },
-          message: { message_id: 42, chat: { id: 555 } },
+          from: { id: 555, first_name: 'Аня', username: 'anya' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
       },
     }, response);
