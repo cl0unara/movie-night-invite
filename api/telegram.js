@@ -1,5 +1,10 @@
 const { timingSafeEqual } = require('node:crypto');
-const { sendMessage, TelegramRequestError } = require('./telegram-client');
+const {
+  sendMessage,
+  answerCallbackQuery,
+  removeInlineKeyboard,
+  TelegramRequestError,
+} = require('./telegram-client');
 
 const MOVIES = {
   i: 'Интерстеллар',
@@ -85,6 +90,40 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const callback = req.body && req.body.callback_query;
+  if (callback) {
+    const callbackChatId = callback.message && callback.message.chat && callback.message.chat.id;
+    const callbackMessageId = callback.message && callback.message.message_id;
+    const callbackData = callback.data;
+    const callbackSender = formatSenderName(callback.from);
+    const callbackPlan = typeof callbackData === 'string' ? parsePlan(callbackData) : null;
+
+    if (!callback.id || !callbackChatId || !callbackMessageId || !callbackPlan || !callbackPlan.cancelled) {
+      if (callback.id) await answerCallbackQuery(token, callback.id, 'Не удалось отменить эту запись.');
+      return res.status(200).json({ ok: true });
+    }
+    if (!adminChatId) {
+      await answerCallbackQuery(token, callback.id, 'Бот ещё настраивается.');
+      return res.status(200).json({ ok: true });
+    }
+
+    try {
+      await sendMessage(
+        token,
+        adminChatId,
+        `Отмена договорённости 💔\\nОт: ${callbackSender}\\nФильм: ${callbackPlan.movie}\\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
+      );
+      await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
+      await answerCallbackQuery(token, callback.id, 'Запись отменена.');
+      await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      const detail = error instanceof TelegramRequestError ? ` (${error.message})` : '';
+      console.error(`Telegram cancellation failed${detail}.`);
+      return res.status(502).json({ error: 'Telegram cancellation failed' });
+    }
+  }
+
   const message = req.body && req.body.message;
   const chatId = message && message.chat && message.chat.id;
   const text = message && message.text;
@@ -123,7 +162,10 @@ module.exports = async function handler(req, res) {
         adminChatId,
         `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
-      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
+      const cancelPayload = `cancel_${Object.keys({ Интерстеллар: 'i', Чернобыль: 'c', '1+1': 'p' }).find((title) => title === plan.movie) ? ({ Интерстеллар: 'i', Чернобыль: 'c', '1+1': 'p' })[plan.movie] : 'i'}_${plan.date}_${plan.time.replace(':', '')}`;
+      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️\\nЕсли планы изменятся, запись можно отменить кнопкой ниже.', {
+        inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]],
+      });
     } else if (plan.cancelled) {
       await sendMessage(
         token,
