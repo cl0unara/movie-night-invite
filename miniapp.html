@@ -47,27 +47,46 @@
   <p class="intro">Выбираем фильм, день и время для нашего вечера ❤️</p>
   <p class="status" id="status">Подключаем Telegram…</p>
   <p class="error" id="error"></p>
-  <section>
-    <h2 class="section">Выбери фильм или сериал</h2>
-    <div class="catalog" id="catalog"></div>
-  </section>
-  <section class="plan">
-    <h2 class="section-title">Дата и время</h2>
-    <div class="subhead"><span>День</span><span class="muted">Ближайшая неделя</span></div>
-    <div class="dates" id="dates"></div>
-    <label class="other-date"><span>Или другая дата</span><input id="other-date" type="date"></label>
-    <div class="subhead"><span>Время</span><span class="muted">18:00–23:45</span></div>
-    <div class="times" id="times"></div>
-    <p class="summary" id="summary">Сначала выбери фильм</p>
-    <button class="send" id="send" disabled>Отправить выбор в бот</button>
-    <p class="muted">После подтверждения выбор придёт в наш Telegram-бот.</p>
-  </section>
-  <section class="shelf">
-    <h2 class="section-title">Уже смотрели ❤️</h2><div id="watched"></div>
-  </section>
-  <section class="shelf" id="admin-shelf" hidden>
+  <nav class="tabs" id="tabs" hidden>
+    <button class="tab" id="guest-tab" aria-selected="true" type="button">Киноплан 🎬</button>
+    <button class="tab" id="admin-tab" aria-selected="false" type="button">Админ ⚙️</button>
+  </nav>
+  <div id="guest-view">
+    <section>
+      <h2 class="section">Выбери фильм или сериал</h2>
+      <div class="filters" id="filters"></div>
+      <div class="catalog" id="catalog"></div>
+    </section>
+    <section class="plan">
+      <h2 class="section-title">Дата и время</h2>
+      <div class="subhead"><span>День</span><span class="muted">Ближайшая неделя</span></div>
+      <div class="dates" id="dates"></div>
+      <label class="other-date"><span>Или другая дата</span><input id="other-date" type="date"></label>
+      <div class="subhead"><span>Время</span><span class="muted">18:00–23:45</span></div>
+      <div class="times" id="times"></div>
+      <p class="summary" id="summary">Сначала выбери фильм</p>
+      <button class="send" id="send" disabled>Забронировать вечер ❤️</button>
+      <p class="muted">Подтверждение появится здесь, в приложении.</p>
+    </section>
+    <section class="shelf">
+      <h2 class="section-title">Уже смотрели ❤️</h2><div id="watched"></div>
+    </section>
+  </div>
+  <section class="shelf" id="admin-view" hidden>
+    <h2 class="section-title">Управление кинопланом</h2>
+    <p class="muted">Меняй порядок фильмов, отмечай просмотренные или скрывай ненужные. Изменения сразу видны в общем каталоге.</p>
+    <div id="admin-movies"></div>
     <h2 class="section-title">Скрытые фильмы</h2><div id="hidden"></div>
   </section>
+  <div class="modal-backdrop" id="confirmation" hidden role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+    <div class="modal">
+      <div class="modal-icon">💗</div>
+      <h2 id="confirmation-title">Ты выбрала наш вечер!</h2>
+      <p id="confirmation-details"></p>
+      <p>Я получил твою бронь. Жду тебя ❤️</p>
+      <button class="send" id="confirmation-close" type="button">Ура, договорились</button>
+    </div>
+  </div>
 </main>
 <script>
 (() => {
@@ -76,6 +95,11 @@
   const $=id=>document.getElementById(id);
   const status=$('status'),error=$('error'),catalog=$('catalog'),watched=$('watched'),hidden=$('hidden');
   const dates=$('dates'),times=$('times'),otherDate=$('other-date'),summary=$('summary'),send=$('send');
+  const filters=$('filters'),adminMovies=$('admin-movies');
+  let activeCategory='Все';
+  let activeTab='guest';
+  const categories={'interstellar':'Фантастика','chernobyl':'Сериал','one-plus-one':'Комедия','knives-out':'Детектив','bodyguards':'Комедия','titanic':'Романтика','home-alone':'Семейное'};
+  const categoryNames=['Все','Фантастика','Детектив','Комедия','Романтика','Семейное','Сериал'];
   const bot='priglosgazavy2026_bot';
   const posters={
     interstellar:'assets/interstellar.png',chernobyl:'assets/chernobyl.png','one-plus-one':'assets/one-plus-one.png',
@@ -131,10 +155,19 @@
     b.addEventListener('click',()=>{selected=movie.id;renderCatalog();updateSummary();});
     return b;
   }
+  function renderFilters(){
+    filters.innerHTML='';
+    categoryNames.forEach(name=>{
+      const b=document.createElement('button');b.type='button';b.className='filter';b.textContent=name;
+      b.setAttribute('aria-pressed',String(activeCategory===name));
+      b.addEventListener('click',()=>{activeCategory=name;renderCatalog();});filters.append(b);
+    });
+  }
   function renderCatalog(){
-    catalog.innerHTML='';
-    state.movies.filter(m=>!m.hidden&&!m.watched).forEach(m=>catalog.append(movieCard(m)));
-    if(!catalog.children.length)catalog.innerHTML='<p class="empty">Пока нет фильмов в планах</p>';
+    catalog.innerHTML='';renderFilters();
+    state.movies.filter(m=>!m.hidden&&!m.watched&&(activeCategory==='Все'||(m.category||categories[m.id]||'')===activeCategory))
+      .forEach(m=>catalog.append(movieCard(m)));
+    if(!catalog.children.length)catalog.innerHTML='<p class="empty">В этой категории пока пусто</p>';
   }
   function adminRow(movie,mode){
     const row=document.createElement('div');row.className='movie-row';
@@ -151,14 +184,55 @@
     }
     return row;
   }
+  async function reorderMovies(movieId,direction){
+    const list=[...state.movies],index=list.findIndex(m=>m.id===movieId),next=index+direction;
+    if(index<0||next<0||next>=list.length)return;
+    [list[index],list[next]]=[list[next],list[index]];
+    const button=adminMovies.querySelectorAll('button');button.forEach(b=>b.disabled=true);
+    try{state=await request('POST',{action:'reorder',order:list.map(m=>m.id)});renderAll();}
+    catch(e){error.textContent=e.message;button.forEach(b=>b.disabled=false);}
+  }
+  function renderAdmin(){
+    adminMovies.innerHTML='';
+    state.movies.forEach((movie,index)=>{
+      const row=document.createElement('div');row.className='admin-movie';
+      const img=document.createElement('img');img.src=posters[movie.id]||'';img.alt='';img.onerror=()=>img.style.display='none';img.style.cssText='width:40px;height:56px;object-fit:cover;border-radius:6px';
+      const info=document.createElement('div');const title=document.createElement('strong');title.textContent=movie.title;
+      const meta=document.createElement('small');meta.className='muted';meta.textContent=(movie.category||categories[movie.id]||'Без категории')+' · '+movie.year+(movie.watched?' · просмотрен':'')+(movie.hidden?' · скрыт':'');
+      info.append(title,meta);row.append(img,info);
+      const actions=document.createElement('div');actions.className='actions';
+      const action=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='action';b.textContent=label;b.addEventListener('click',fn);actions.append(b);};
+      action('↑',()=>reorderMovies(movie.id,-1));action('↓',()=>reorderMovies(movie.id,1));
+      if(movie.watched)action('В планы',()=>setMovieFlag(movie.id,'watched',false));else action('Смотрели',()=>setMovieFlag(movie.id,'watched',true));
+      if(movie.hidden)action('Показать',()=>setMovieFlag(movie.id,'hidden',false));else action('Скрыть',()=>setMovieFlag(movie.id,'hidden',true));
+      row.append(actions);adminMovies.append(row);
+    });
+    if(!adminMovies.children.length)adminMovies.innerHTML='<p class="empty">Каталог пока пуст</p>';
+    hidden.innerHTML='';state.movies.filter(m=>m.hidden).forEach(m=>hidden.append(adminRow(m,'hidden')));
+  }
+  async function setMovieFlag(id,action,value){
+    try{state=await request('POST',{id,action,value});renderAll();}
+    catch(e){error.textContent=e.message;}
+  }
+  function setTab(tab){
+    activeTab=tab;
+    const admin=tab==='admin';
+    $('guest-view').hidden=admin;$('admin-view').hidden=!admin;
+    $('guest-tab').setAttribute('aria-selected',String(!admin));
+    $('admin-tab').setAttribute('aria-selected',String(admin));
+  }
   function renderAll(){
     renderCatalog();
     watched.innerHTML='';state.movies.filter(m=>m.watched&&!m.hidden).forEach(m=>watched.append(adminRow(m,'watched')));
     if(!watched.children.length)watched.innerHTML='<p class="empty">Здесь появятся просмотренные фильмы</p>';
-    $('admin-shelf').hidden=role!=='admin';hidden.innerHTML='';
-    state.movies.filter(m=>m.hidden).forEach(m=>hidden.append(adminRow(m,'hidden')));
-    status.textContent=role==='admin'?'Режим администратора · общий список':'Гостевой доступ · можно выбирать фильм и время';
+    $('tabs').hidden=role!=='admin';
+    if(role==='admin'&&activeTab==='admin'){renderAdmin();setTab('admin');}else setTab('guest');
+    status.textContent=role==='admin'?'Режим администратора · доступ только для тебя':'Гостевой доступ · выбирай фильм и время';
   }
+  $('guest-tab').addEventListener('click',()=>setTab('guest'));
+  $('admin-tab').addEventListener('click',()=>{renderAdmin();setTab('admin');});
+  $('confirmation-close').addEventListener('click',()=>{$('confirmation').hidden=true;});
+  $('confirmation').addEventListener('click',e=>{if(e.target===$('confirmation'))$('confirmation').hidden=true;});
   otherDate.addEventListener('change',()=>{date=otherDate.value;renderDates();updateSummary();});
   send.addEventListener('click',async()=>{
     if(send.disabled)return;
@@ -174,8 +248,8 @@
       if(!response.ok)throw new Error(result.error||'Не удалось отправить запись');
       $('confirmation-details').textContent=result.movie+' · '+fmtDate(result.date)+' · '+result.time;
       $('confirmation').hidden=false;
-      send.textContent='Запись отправлена ❤️';
       if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+      send.textContent='Запись отправлена ❤️';
       $('confirmation').scrollIntoView({behavior:'smooth',block:'nearest'});
     }catch(e){
       error.textContent=e.message;

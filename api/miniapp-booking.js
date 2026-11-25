@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
     await sendMessage(
       token,
       auth.id,
-      'Она выбрала наш вечер 💗\n\n🎬 ' + movie[0] + '\n📅 ' + dateAndTime + '\n\nЖду тебя, Газява ❤️',
+      'Твой план на вечер готов! 💗\n\n🎬 ' + movie[0] + '\n📅 ' + dateAndTime + '\n\nДо встречи ❤️',
       { inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]] },
     );
     return res.status(200).json({ ok: true, movie: movie[0], date, time });
