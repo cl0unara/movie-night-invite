@@ -10,11 +10,15 @@ const MOVIES = {
   i: 'Интерстеллар',
   c: 'Чернобыль',
   p: '1+1',
+  k: 'Достать ножи',
+  t: 'Телохранители',
 };
 const MOVIE_CODES = {
   Интерстеллар: 'i',
   Чернобыль: 'c',
   '1+1': 'p',
+  'Достать ножи': 'k',
+  'Телохранители': 't',
 };
 function isAllowedTime(time) {
   if (!/^\d{4}$/.test(time)) return false;
@@ -34,7 +38,7 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^(yes|cancel)_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
+  const match = /^(yes|cancel)_([icpkt])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
   if (!match || !isAllowedTime(match[4])) return null;
 
   const date = new Date(`${match[3]}T00:00:00Z`);
