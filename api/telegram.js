@@ -58,7 +58,7 @@ function parsePlan(payload) {
     movie: MOVIES[match[2]],
     date: match[3],
     time: `${match[4].slice(0, 2)}:${match[4].slice(2)}`,
-    userId: match[5] || null,
+    userId: match[5] && /^\\d+$/.test(match[5]) ? match[5] : null,
     movieId: ({ i: 'interstellar', c: 'chernobyl', p: 'one-plus-one', k: 'knives-out', t: 'bodyguards', a: 'titanic', h: 'home-alone' })[match[2]],
   };
 }
@@ -145,18 +145,18 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
       const booking = result.booking;
-      if (!booking.adminNotifiedAt) {
+      if (!booking.cancellationAdminNotifiedAt) {
         await sendMessage(
           token,
           adminChatId,
           `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
         );
-        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'adminNotifiedAt' });
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationAdminNotifiedAt' });
       }
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
-      if (!booking.guestNotifiedAt) {
+      if (!booking.cancellationGuestNotifiedAt) {
         await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
-        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'guestNotifiedAt' });
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationGuestNotifiedAt' });
       }
       return res.status(200).json({ ok: true });
     } catch (error) {
@@ -208,15 +208,26 @@ module.exports = async function handler(req, res) {
 
     if (plan.accepted) {
       const dateAndTime = `${formatDate(plan.date)}, ${plan.time}`;
+      await createBooking({
+        userId: String(chatId),
+        movieId: plan.movieId,
+        movieTitle: plan.movie,
+        date: plan.date,
+        time: plan.time,
+        guestName: senderName,
+        guestUsername: '',
+      });
       await sendMessage(
         token,
         adminChatId,
         `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
-      const cancelPayload = `cancel_${MOVIE_CODES[plan.movie]}_${plan.date}_${plan.time.replace(':', '')}`;
+      await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'adminNotifiedAt' });
+      const cancelPayload = `cancel_${MOVIE_CODES[plan.movie]}_${plan.date}_${plan.time.replace(':', '')}_${chatId}`;
       await sendMessage(token, chatId, 'Жду тебя, Газява ❤️\nЕсли планы изменятся, запись можно отменить кнопкой ниже.', {
         inline_keyboard: [[{ text: 'Отменить запись', callback_data: cancelPayload }]],
       });
+      await markBookingNotification({ userId: chatId, movieId: plan.movieId, date: plan.date, time: plan.time, field: 'guestNotifiedAt' });
     } else if (plan.cancelled) {
       await sendMessage(
         token,
