@@ -54,7 +54,11 @@ test('accepted start payload notifies the owner and replies to the guest', async
     assert.match(requests[0].body.text, /Фильм: 1\+1/);
     assert.match(requests[0].body.text, /30 марта 2026.*22:15/);
     assert.equal(requests[1].body.chat_id, 555);
-    assert.equal(requests[1].body.text, 'Жду тебя, Газява ❤️');
+    assert.match(requests[1].body.text, /Жду тебя, Газява/);
+    assert.deepEqual(requests[1].body.reply_markup.inline_keyboard[0][0], {
+      text: 'Отменить запись',
+      callback_data: 'cancel_p_2026-03-30_2215',
+    });
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
@@ -349,6 +353,58 @@ test('cancellation payload notifies the owner with the cancelled plan', async ()
     assert.match(requests[0].text, /Интерстеллар/);
     assert.match(requests[0].text, /22:15/);
     assert.equal(requests[1].text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('inline cancellation button notifies the owner and removes itself', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'callback-123',
+          data: 'cancel_c_2026-03-30_2230',
+          from: { first_name: 'Аня', username: 'anya' },
+          message: { message_id: 42, chat: { id: 555 } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 4);
+    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
+    assert.match(requests[0].body.text, /Отмена договорённости/);
+    assert.match(requests[0].body.text, /Чернобыль/);
+    assert.match(requests[0].body.text, /22:30/);
+    assert.equal(requests[1].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
+    assert.deepEqual(requests[1].body.reply_markup, { inline_keyboard: [] });
+    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
+    assert.equal(requests[2].body.callback_query_id, 'callback-123');
+    assert.equal(requests[3].body.chat_id, 555);
+    assert.equal(requests[3].body.text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
