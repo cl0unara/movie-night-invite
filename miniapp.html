@@ -85,7 +85,7 @@
     status.textContent = role==='admin' ? 'Режим администратора · изменения видны обоим' : 'Гостевой доступ · общий список';
   }
   if (!initData) { status.textContent='Открой приложение через кнопку в Telegram-боте.'; error.textContent='Для проверки доступа нужен запуск внутри Telegram.'; return; }
-  request('GET').then(data=>{state=data;role=data.role;render();}).catch(e=>{status.textContent='Не удалось подключиться';error.textContent=e.message;});
+  request('GET').then(async data=>{state=data;role=data.role;render();if(role==='admin'){try{await fetch('/api/set-miniapp-menu',{method:'POST',headers:{'x-telegram-init-data':initData}});}catch(e){console.warn('Could not configure Telegram menu button');}}}).catch(e=>{status.textContent='Не удалось подключиться';error.textContent=e.message;});
 })();
 </script>
 </body>
