@@ -50,7 +50,7 @@ function formatDate(value) {
 async function isMovieAvailable(movieId) {
   try {
     const result = await get(STATE_PATH, { access: 'private' });
-    if (result && result.statusCode === 404) {
+    if (!result || result.statusCode === 404) {
       return Object.prototype.hasOwnProperty.call(MOVIES, movieId);
     }
     if (!result || result.statusCode !== 200) throw new Error('Shared movie state unavailable');
