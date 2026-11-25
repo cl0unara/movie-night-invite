@@ -26,6 +26,8 @@ const movieCodes = {
   '1+1': 'p',
   'Достать ножи': 'k',
   'Телохранители': 't',
+  'Титаник': 'a',
+  'Один дома': 'h',
 };
 const telegramBotUsername = 'priglosgazavy2026_bot';
 
