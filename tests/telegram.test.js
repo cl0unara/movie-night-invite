@@ -1,6 +1,23 @@
 const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { test, beforeEach } = require('node:test');
+const Module = require('node:module');
+let mockState = { movies: [], bookings: [] };
+let mockEtag = 'telegram-test-etag';
+const originalLoad = Module._load;
+Module._load = function loadWithBlobMock(request, parent, isMain) {
+  if (request === '@vercel/blob') return {
+    get: async () => ({ statusCode: 200, stream: new Response(JSON.stringify(mockState)).body, blob: { etag: mockEtag } }),
+    put: async (_path, body) => { mockState = JSON.parse(body); mockEtag += 'x'; return {}; },
+  };
+  return originalLoad.call(this, request, parent, isMain);
+};
 const handler = require('../api/telegram');
+Module._load = originalLoad;
+beforeEach(() => { mockState = { movies: [], bookings: [] }; mockEtag = 'telegram-test-etag'; });
+
+function seedBooking({ userId = '555', movieId = 'interstellar', date = '2026-03-30', time = '22:15' } = {}) {
+  mockState.bookings.push({ userId, movieId, movieTitle: 'Интерстеллар', date, time, status: 'confirmed', adminNotifiedAt: new Date().toISOString(), guestNotifiedAt: new Date().toISOString(), cancellationAdminNotifiedAt: null, cancellationGuestNotifiedAt: null });
+}
 
 function createResponse() {
   return {
@@ -57,7 +74,7 @@ test('accepted start payload notifies the owner and replies to the guest', async
     assert.match(requests[1].body.text, /Жду тебя, Газява/);
     assert.deepEqual(requests[1].body.reply_markup.inline_keyboard[0][0], {
       text: 'Отменить запись',
-      callback_data: 'cancel_p_2026-03-30_2215',
+      callback_data: 'cancel_p_2026-03-30_2215_555',
     });
   } finally {
     if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
@@ -404,6 +421,7 @@ test('inline cancellation button notifies the owner and removes itself', async (
   };
 
   try {
+    seedBooking({ movieId: 'chernobyl', date: '2026-03-30', time: '22:30' });
     const response = createResponse();
     await handler({
       method: 'POST',
@@ -411,7 +429,7 @@ test('inline cancellation button notifies the owner and removes itself', async (
       body: {
         callback_query: {
           id: 'callback-123',
-          data: 'cancel_c_2026-03-30_2230',
+          data: 'cancel_c_2026-03-30_2230_555',
           from: { id: 555, first_name: 'Аня', username: 'anya' },
           message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
@@ -419,6 +437,10 @@ test('inline cancellation button notifies the owner and removes itself', async (
     }, response);
 
     assert.equal(response.statusCode, 200);
+    assert.equal(mockState.bookings[0].status, 'cancelled');
+    assert.ok(mockState.bookings[0].cancelledAt);
+    assert.ok(mockState.bookings[0].cancellationAdminNotifiedAt);
+    assert.ok(mockState.bookings[0].cancellationGuestNotifiedAt);
     assert.equal(requests.length, 4);
     assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
     assert.equal(requests[0].body.callback_query_id, 'callback-123');
@@ -556,7 +578,7 @@ test('cancellation callback from another user is rejected without notifying the 
       body: {
         callback_query: {
           id: 'callback-forged',
-          data: 'cancel_i_2026-03-30_2215',
+          data: 'cancel_i_2026-03-30_2215_555',
           from: { id: 999, first_name: 'Чужой пользователь' },
           message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
@@ -604,6 +626,7 @@ test('failed cancellation keeps the inline button available and sends a retry hi
   };
 
   try {
+    seedBooking({ movieId: 'interstellar', date: '2026-03-30', time: '22:15' });
     const response = createResponse();
     await handler({
       method: 'POST',
@@ -618,7 +641,9 @@ test('failed cancellation keeps the inline button available and sends a retry hi
       },
     }, response);
 
-    assert.equal(response.statusCode, 200);
+    assert.equal(response.statusCode, 500);
+    assert.equal(mockState.bookings[0].status, 'cancelled');
+    assert.equal(mockState.bookings[0].cancellationAdminNotifiedAt, null);
     assert.equal(requests.length, 3);
     assert.match(requests[0].url, /answerCallbackQuery$/);
     assert.match(requests[2].url, /sendMessage$/);
