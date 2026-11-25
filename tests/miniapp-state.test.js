@@ -59,7 +59,7 @@ function createInitData(userId) {
   const checkString = [...params.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value)
-    .join('\\n');
+    .join('\n');
   const secret = createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
   params.set('hash', createHmac('sha256', secret).update(checkString).digest('hex'));
   return params.toString();
