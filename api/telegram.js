@@ -132,8 +132,9 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    let cancellationSaved = false;
     try {
-      await answerCallbackQuery(token, callback.id, 'Отменяем запись…');
+      try { await answerCallbackQuery(token, callback.id, 'Отменяем запись…'); } catch {}
       const result = await cancelBooking({
         userId: callbackUserId,
         movieId: callbackPlan.movieId,
@@ -144,6 +145,7 @@ module.exports = async function handler(req, res) {
         await sendMessage(token, callbackChatId, 'Не нашёл активную запись для отмены. Если планы изменились, напиши мне напрямую ❤️');
         return res.status(200).json({ ok: true });
       }
+      cancellationSaved = true;
       const booking = result.booking;
       if (!booking.cancellationAdminNotifiedAt) {
         await sendMessage(
@@ -153,19 +155,21 @@ module.exports = async function handler(req, res) {
         );
         await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationAdminNotifiedAt' });
       }
-      await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
       if (!booking.cancellationGuestNotifiedAt) {
         await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
         await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'cancellationGuestNotifiedAt' });
       }
+      await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
       return res.status(200).json({ ok: true });
     } catch (error) {
       const detail = error instanceof TelegramRequestError ? ` (${error.message})` : '';
       console.error(`Telegram cancellation failed${detail}.`);
       try {
-        await sendMessage(token, callbackChatId, 'Отмена сохранена, но уведомление не удалось доставить. Попробуй нажать кнопку ещё раз — я повторю отправку.');
+        await sendMessage(token, callbackChatId, cancellationSaved
+          ? 'Отмена сохранена, но уведомление не удалось доставить. Нажми кнопку ещё раз — я повторю отправку.'
+          : 'Не удалось сохранить отмену. Попробуй нажать кнопку ещё раз чуть позже.');
       } catch {}
-      return res.status(500).json({ error: 'Cancellation notification delivery failed' });
+      return res.status(500).json({ error: 'Cancellation processing incomplete' });
     }
   }
 
