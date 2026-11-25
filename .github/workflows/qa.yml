@@ -35,5 +35,11 @@ jobs:
           if (scripts.length !== 1) throw new Error('Expected exactly one inline Mini App script');
           new vm.Script(scripts[0][1], { filename: 'miniapp.html:inline-script' });
           NODE
+      - name: Scan tracked files for hardcoded Telegram bot tokens
+        run: |
+          if git grep -nE '[0-9]{8,12}:[A-Za-z0-9_-]{30,}' -- .; then
+            echo 'Possible hardcoded Telegram bot token found.'
+            exit 1
+          fi
       - name: Run Telegram webhook regression tests
         run: node --test tests/*.test.js
