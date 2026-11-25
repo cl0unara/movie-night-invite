@@ -16,7 +16,7 @@ function signedInitData(overrides = {}) {
   const check = [...values.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value)
-    .join('\\n');
+    .join('\n');
   const secret = createHmac('sha256', 'WebAppData').update(TOKEN).digest();
   const hash = createHmac('sha256', secret).update(check).digest('hex');
   return [...values.entries()].map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value)).join('&')
