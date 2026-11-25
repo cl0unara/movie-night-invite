@@ -1,15 +1,57 @@
-const movieDescriptions = {
-  Интерстеллар: 'Большое космическое приключение о семье, времени и выборе. Для вечера с атмосферой и разговорами после титров.',
-  Чернобыль: 'Напряжённый мини-сериал из пяти серий о событиях на ЧАЭС. Лучше выбрать, если хочется погружения на несколько вечеров.',
-  '1+1': 'Тёплая комедия-драма о дружбе, которая меняет жизнь. Самый лёгкий вариант для уютного вечера.',
+const movieCatalog = {
+  Интерстеллар: {
+    genre: 'Фантастика, драма, приключения',
+    year: '2014',
+    duration: '2 ч 49 мин',
+    rating: '8.7/10',
+    stars: '★★★★☆',
+    description: 'Когда Земля постепенно становится непригодной для жизни, бывший пилот Купер отправляется вместе с командой исследовать далёкие планеты. Но за масштабным космическим путешествием скрывается очень личная история об отношениях отца и дочери, времени и выборе между долгом и семьёй. Фильм с мощной атмосферой, красивой музыкой и тем самым послевкусием, после которого хочется ещё немного поговорить.',
+  },
+  Чернобыль: {
+    genre: 'Историческая драма, мини-сериал',
+    year: '2019',
+    duration: '5 серий · около 5 ч',
+    rating: '9.3/10',
+    stars: '★★★★★',
+    description: 'Пятисерийная история о катастрофе на Чернобыльской АЭС в апреле 1986 года. Сериал показывает работу учёных, пожарных и обычных людей, которые столкнулись с последствиями аварии, а также цену замалчивания правды. Тяжёлый, напряжённый и очень сильный вариант, если хочется серьёзного просмотра.',
+  },
+  '1+1': {
+    genre: 'Комедия, драма',
+    year: '2011',
+    duration: '1 ч 52 мин',
+    rating: '8.5/10',
+    stars: '★★★★☆',
+    description: 'После несчастного случая богатый аристократ Филипп ищет помощника и неожиданно знакомится с Дриссом — парнем из совершенно другого мира. Их дружба начинается с недоверия, но постепенно превращается в историю о свободе, юморе и поддержке. Очень тёплый, смешной и душевный фильм — отличный выбор для уютного вечера.',
+  },
 };
 
 const movieDetail = document.querySelector('#movie-detail');
 
 document.querySelectorAll('.movie-card').forEach((card) => {
+  const movie = card.dataset.movie;
+  const details = movieCatalog[movie];
+  if (!details) return;
+
+  const rating = document.createElement('small');
+  rating.className = 'movie-rating';
+  rating.textContent = `${details.stars} ${details.rating}`;
+  card.querySelector('.movie-info').append(rating);
+
   card.addEventListener('click', () => {
-    const movie = card.dataset.movie;
-    movieDetail.textContent = movieDescriptions[movie] || '';
-    movieDetail.hidden = !movieDetail.textContent;
+    movieDetail.replaceChildren();
+    const heading = document.createElement('strong');
+    heading.className = 'movie-detail-title';
+    heading.textContent = movie;
+    const metadata = document.createElement('span');
+    metadata.className = 'movie-detail-meta';
+    metadata.textContent = `${details.genre} · ${details.year} · ${details.duration}`;
+    const ratingLine = document.createElement('span');
+    ratingLine.className = 'movie-detail-rating';
+    ratingLine.textContent = `${details.stars}  ${details.rating} · рейтинг IMDb`;
+    const description = document.createElement('span');
+    description.className = 'movie-detail-copy';
+    description.textContent = details.description;
+    movieDetail.append(heading, metadata, ratingLine, description);
+    movieDetail.hidden = false;
   });
 });
