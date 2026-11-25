@@ -6,7 +6,12 @@ const MOVIES = {
   c: 'Чернобыль',
   p: '1+1',
 };
-const ALLOWED_TIMES = new Set(['1800', '1900', '2000', '2100', '2200', '2300', '0000', '0100', '0200']);
+function isAllowedTime(time) {
+  if (!/^\\d{4}$/.test(time)) return false;
+  const hours = Number(time.slice(0, 2));
+  const minutes = Number(time.slice(2));
+  return hours >= 18 && hours <= 23 && minutes <= 45 && minutes % 15 === 0;
+}
 
 function secretsMatch(expected, received) {
   if (typeof expected !== 'string' || typeof received !== 'string') return false;
@@ -19,8 +24,8 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^yes_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
-  if (!match || !ALLOWED_TIMES.has(match[3])) return null;
+  const match = /^(yes|cancel)_([icp])_(\\d{4}-\\d{2}-\\d{2})_(\\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
+  if (!match || !isAllowedTime(match[4])) return null;
 
   const date = new Date(`${match[2]}T00:00:00Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== match[2]) {
@@ -28,10 +33,11 @@ function parsePlan(payload) {
   }
 
   return {
-    accepted: true,
-    movie: MOVIES[match[1]],
-    date: match[2],
-    time: `${match[3].slice(0, 2)}:${match[3].slice(2)}`,
+    accepted: match[1] === 'yes',
+    cancelled: match[1] === 'cancel',
+    movie: MOVIES[match[2]],
+    date: match[3],
+    time: `${match[4].slice(0, 2)}:${match[4].slice(2)}`,
   };
 }
 
@@ -111,14 +117,20 @@ module.exports = async function handler(req, res) {
     }
 
     if (plan.accepted) {
-      const night = ['00:00', '01:00', '02:00'].includes(plan.time) ? 'Ночь на ' : '';
-      const dateAndTime = `${night}${formatDate(plan.date)}, ${plan.time}`;
+      const dateAndTime = `${formatDate(plan.date)}, ${plan.time}`;
       await sendMessage(
         token,
         adminChatId,
-        `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
+        `Новый ответ на приглашение 🎬\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nДата и время: ${dateAndTime}`,
       );
       await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
+    } else if (plan.cancelled) {
+      await sendMessage(
+        token,
+        adminChatId,
+        `Отмена договорённости 💔\\nОт: ${senderName}\\nФильм: ${plan.movie}\\nОтменённый план: ${formatDate(plan.date)}, ${plan.time}`,
+      );
+      await sendMessage(token, chatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
     } else {
       await sendMessage(token, adminChatId, `Ответ на приглашение от ${senderName}: в этот раз не получится.`);
       await sendMessage(token, chatId, 'Спасибо, что ответила ❤️');
