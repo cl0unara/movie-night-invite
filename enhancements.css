@@ -96,3 +96,28 @@
   .time-chip { min-width: 76px; }
   .movie-detail-copy { font-size: 12px; }
 }
+
+
+.cancel-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 13px 14px;
+  border: 1px solid #806477;
+  border-radius: 10px;
+  background: #4a304533;
+}
+.cancel-plan span {
+  flex: 1 1 220px;
+  color: #e7d7e5;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.cancel-plan .button {
+  min-height: 38px;
+  padding: 8px 11px;
+  font-size: 11px;
+}
