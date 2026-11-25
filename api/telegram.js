@@ -121,19 +121,22 @@ module.exports = async function handler(req, res) {
     }
 
     try {
+      await answerCallbackQuery(token, callback.id, 'Отменяем запись…');
       await sendMessage(
         token,
         adminChatId,
-        `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
+        `Отмена договорённости 💔\\nОт: ${callbackSender}\\nФильм: ${callbackPlan.movie}\\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
       );
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
-      await answerCallbackQuery(token, callback.id, 'Запись отменена.');
       await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
       return res.status(200).json({ ok: true });
     } catch (error) {
       const detail = error instanceof TelegramRequestError ? ` (${error.message})` : '';
       console.error(`Telegram cancellation failed${detail}.`);
-      return res.status(502).json({ error: 'Telegram cancellation failed' });
+      try {
+        await sendMessage(token, callbackChatId, 'Не удалось завершить отмену. Кнопка осталась активной — попробуй ещё раз чуть позже.');
+      } catch {}
+      return res.status(200).json({ ok: true });
     }
   }
 
