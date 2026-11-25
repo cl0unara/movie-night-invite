@@ -3,14 +3,16 @@ const { createHmac } = require('node:crypto');
 const { test } = require('node:test');
 const Module = require('node:module');
 let mockBlobState = null;
+let mockEtag = 'test-etag';
 const originalLoad = Module._load;
 Module._load = function loadWithBlobMock(request, parent, isMain) {
   if (request === '@vercel/blob') {
     return {
       get: async () => {
         if (mockBlobState === null) return null;
-        return { statusCode: 200, stream: new Response(JSON.stringify(mockBlobState)).body };
+        return { statusCode: 200, stream: new Response(JSON.stringify(mockBlobState)).body, blob: { etag: mockEtag } };
       },
+      put: async (_path, body) => { mockBlobState = JSON.parse(body); mockEtag = 'test-etag-' + Math.random(); return {}; },
     };
   }
   return originalLoad.call(this, request, parent, isMain);
@@ -104,7 +106,9 @@ test('booking accepts a future local slot and sends both Telegram messages', asy
     assert.equal(requests[0].body.chat_id, '7001');
     assert.match(requests[0].body.text, /Фильм: Титаник/);
     assert.equal(requests[1].body.chat_id, '555');
-    assert.match(requests[1].body.reply_markup.inline_keyboard[0][0].callback_data, /^cancel_a_2026-11-25_2000$/);
+    assert.match(requests[1].body.reply_markup.inline_keyboard[0][0].callback_data, /^cancel_a_2026-11-25_2000_555$/);
+    assert.equal(mockBlobState.bookings.length, 1);
+    assert.equal(mockBlobState.bookings[0].status, 'confirmed');
   });
 });
 
