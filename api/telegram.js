@@ -7,7 +7,7 @@ const MOVIES = {
   p: '1+1',
 };
 function isAllowedTime(time) {
-  if (!/^\\d{4}$/.test(time)) return false;
+  if (!/^\d{4}$/.test(time)) return false;
   const hours = Number(time.slice(0, 2));
   const minutes = Number(time.slice(2));
   return hours >= 18 && hours <= 23 && minutes <= 45 && minutes % 15 === 0;
@@ -24,11 +24,11 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^(yes|cancel)_([icp])_(\\d{4}-\\d{2}-\\d{2})_(\\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
+  const match = /^(yes|cancel)_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
   if (!match || !isAllowedTime(match[4])) return null;
 
-  const date = new Date(`${match[2]}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== match[2]) {
+  const date = new Date(`${match[3]}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== match[3]) {
     return null;
   }
 
