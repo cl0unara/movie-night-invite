@@ -4,7 +4,7 @@ const { createHmac } = require('node:crypto');
 const { validateTelegramInitData } = require('../api/telegram-auth');
 
 const TOKEN = '123456:unit-test-token';
-const NOW = 1_800_000_000;
+const NOW = Math.floor(Date.now() / 1000);
 
 function signedInitData(overrides = {}) {
   const values = new Map([
