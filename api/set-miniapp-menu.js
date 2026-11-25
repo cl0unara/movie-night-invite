@@ -6,7 +6,6 @@ function validateInitData(initData, botToken) {
   const hash = params.get('hash');
   if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) return null;
   params.delete('hash');
-  params.delete('signature');
   const checkString = [...params.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value)
