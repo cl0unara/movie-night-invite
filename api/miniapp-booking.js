@@ -50,7 +50,10 @@ function formatDate(value) {
 async function isMovieAvailable(movieId) {
   try {
     const result = await get(STATE_PATH, { access: 'private' });
-    if (!result || result.statusCode !== 200) return Object.prototype.hasOwnProperty.call(MOVIES, movieId);
+    if (result && (result.statusCode === 404 || result.statusCode === 404)) {
+      return Object.prototype.hasOwnProperty.call(MOVIES, movieId);
+    }
+    if (!result || result.statusCode !== 200) throw new Error('Shared movie state unavailable');
     const parsed = JSON.parse(await new Response(result.stream).text());
     if (!parsed || !Array.isArray(parsed.movies)) throw new Error('Invalid shared movie state');
     return parsed.movies.some(movie => movie && movie.id === movieId && !movie.hidden && !movie.watched);
@@ -66,7 +69,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
-  if (!token || !adminChatId || !/^-?\d+$/.test(adminChatId)) {
+  if (!token || !adminChatId || !/^-?\d+$/.test(adminChatId) || !process.env.BLOB_READ_WRITE_TOKEN) {
     return res.status(503).json({ error: 'Бот ещё не настроен для получения записей. Напиши администратору.' });
   }
   const auth = validateInitData(req.headers['x-telegram-init-data'] || (req.body && req.body.initData), token);
