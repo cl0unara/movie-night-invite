@@ -20,7 +20,7 @@ function validateTelegramInitData(initData, botToken, nowSeconds = Date.now() / 
   if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) return null;
 
   const authDateRaw = params.get('auth_date');
-  if (!authDateRaw || !/^\\d+$/.test(authDateRaw)) return null;
+  if (!authDateRaw || !/^\d+$/.test(authDateRaw)) return null;
   const authDate = Number(authDateRaw);
   if (!Number.isSafeInteger(authDate)) return null;
   if (authDate > nowSeconds + FUTURE_CLOCK_SKEW_SECONDS) return null;
@@ -30,7 +30,7 @@ function validateTelegramInitData(initData, botToken, nowSeconds = Date.now() / 
     .filter(([key]) => key !== 'hash')
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value)
-    .join('\\n');
+    .join('\n');
 
   const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
   const calculated = createHmac('sha256', secret).update(checkString).digest();
