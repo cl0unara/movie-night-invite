@@ -373,6 +373,7 @@ test('cancellation payload notifies the owner with the cancelled plan', async ()
   };
 
   try {
+    seedBooking({ movieId: 'interstellar', date: '2026-03-30', time: '22:15' });
     const response = createResponse();
     await handler({
       method: 'POST',
@@ -634,7 +635,7 @@ test('failed cancellation keeps the inline button available and sends a retry hi
       body: {
         callback_query: {
           id: 'callback-retry',
-          data: 'cancel_i_2026-03-30_2215',
+          data: 'cancel_i_2026-03-30_2215_555',
           from: { id: 555, first_name: 'Аня' },
           message: { message_id: 43, chat: { id: 555, type: 'private' } },
         },
@@ -648,7 +649,7 @@ test('failed cancellation keeps the inline button available and sends a retry hi
     assert.match(requests[0].url, /answerCallbackQuery$/);
     assert.match(requests[2].url, /sendMessage$/);
     assert.equal(requests[2].body.chat_id, 555);
-    assert.match(requests[2].body.text, /Кнопка осталась активной/);
+    assert.match(requests[2].body.text, /Отмена сохранена/);
     assert.equal(requests.some(request => /editMessageReplyMarkup$/.test(request.url)), false);
   } finally {
     if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
