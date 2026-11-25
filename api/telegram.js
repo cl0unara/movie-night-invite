@@ -44,7 +44,7 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^(yes|cancel)_([icpktah])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
+  const match = /^(yes|cancel)_([icpktah])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_([0-9a-z]+))?$/.exec(payload);
   if (!match || !isAllowedTime(match[4])) return null;
 
   const date = new Date(`${match[3]}T00:00:00Z`);
