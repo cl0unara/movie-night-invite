@@ -431,7 +431,7 @@ test('new movie and series payloads are accepted and named correctly', async () 
     return { ok: true, json: async () => ({ ok: true }) };
   };
   try {
-    for (const [code, title] of [['k', 'Достать ножи'], ['t', 'Телохранители']]) {
+    for (const [code, title] of [['k', 'Достать ножи'], ['t', 'Телохранители'], ['a', 'Титаник'], ['h', 'Один дома']]) {
       const response = createResponse();
       await handler({
         method: 'POST',
