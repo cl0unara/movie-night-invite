@@ -1,11 +1,5 @@
 const { timingSafeEqual } = require('node:crypto');
 const { sendMessage, TelegramRequestError } = require('./telegram-client');
-const {
-  ReminderStorageError,
-  cancelReminder,
-  scheduleReminder,
-  isConfigured,
-} = require('./reminder-store');
 
 const MOVIES = {
   i: 'Интерстеллар',
@@ -25,7 +19,7 @@ function secretsMatch(expected, received) {
 function parsePlan(payload) {
   if (payload === 'no') return { accepted: false };
 
-  const match = /^yes_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_([0-9a-z]+))?$/.exec(payload);
+  const match = /^yes_([icp])_(\d{4}-\d{2}-\d{2})_(\d{4})(?:_[0-9a-z]+)?$/.exec(payload);
   if (!match || !ALLOWED_TIMES.has(match[3])) return null;
 
   const date = new Date(`${match[2]}T00:00:00Z`);
@@ -33,19 +27,11 @@ function parsePlan(payload) {
     return null;
   }
 
-  const meetingMinute = match[4] ? Number.parseInt(match[4], 36) : null;
-  if (match[4] && (
-    !Number.isSafeInteger(meetingMinute)
-    || meetingMinute <= 0
-    || !Number.isSafeInteger(meetingMinute * 60000)
-  )) return null;
-
   return {
     accepted: true,
     movie: MOVIES[match[1]],
     date: match[2],
     time: `${match[3].slice(0, 2)}:${match[3].slice(2)}`,
-    meetingAt: meetingMinute === null ? null : meetingMinute * 60000,
   };
 }
 
@@ -127,31 +113,20 @@ module.exports = async function handler(req, res) {
     if (plan.accepted) {
       const night = ['00:00', '01:00', '02:00'].includes(plan.time) ? 'Ночь на ' : '';
       const dateAndTime = `${night}${formatDate(plan.date)}, ${plan.time}`;
-      let reminderScheduled = false;
-      if (plan.meetingAt !== null) {
-        if (!isConfigured()) throw new Error('Reminder storage is not configured');
-        reminderScheduled = await scheduleReminder(chatId, plan);
-      }
       await sendMessage(
         token,
         adminChatId,
         `Новый ответ на приглашение 🎬\nОт: ${senderName}\nФильм: ${plan.movie}\nДата и время: ${dateAndTime}`,
       );
-      const reply = reminderScheduled
-        ? 'Жду тебя, Газява ❤️\nНапомню за полчаса до просмотра 🍿'
-        : plan.meetingAt === null
-          ? 'Жду тебя, Газява ❤️'
-          : 'Жду тебя, Газява ❤️\nДо просмотра меньше 30 минут — заранее напомнить уже не успею.';
-      await sendMessage(token, chatId, reply);
+      await sendMessage(token, chatId, 'Жду тебя, Газява ❤️');
     } else {
-      if (isConfigured()) await cancelReminder(chatId);
       await sendMessage(token, adminChatId, `Ответ на приглашение от ${senderName}: в этот раз не получится.`);
       await sendMessage(token, chatId, 'Спасибо, что ответила ❤️');
     }
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    const detail = error instanceof TelegramRequestError || error instanceof ReminderStorageError
+    const detail = error instanceof TelegramRequestError
       ? ` (${error.message})`
       : '';
     console.error(`Telegram message delivery failed${detail}.`);

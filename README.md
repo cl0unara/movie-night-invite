@@ -46,23 +46,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Настройка webhook заменяет прежний webhook этого же бота, если он был настроен. Выполняй её только для этого сайта.
 
-### Напоминание за 30 минут
-
-После принятия приглашения бот ставит напоминание в тот же Telegram-чат за 30 минут до выбранного локального времени. Для доставки используется QStash; активный выбор хранится в Upstash Redis, чтобы устаревшие напоминания пропускались, если ответ изменили.
-
-Чтобы включить напоминания:
-
-1. Создай базу в [Upstash Redis](https://console.upstash.com/redis) и скопируй HTTPS REST URL и REST token.
-2. Открой [Upstash QStash](https://console.upstash.com/qstash) и скопируй `QSTASH_TOKEN` из Quickstart.
-3. В Vercel → **Settings → Environment Variables** добавь для Production:
-   - `UPSTASH_REDIS_REST_URL` — HTTPS REST URL базы Upstash.
-   - `UPSTASH_REDIS_REST_TOKEN` — REST token этой базы.
-   - `QSTASH_TOKEN` — токен QStash.
-   - `REMINDER_CALLBACK_SECRET` — случайная длинная строка для проверки вызовов QStash.
-4. Убедись, что в настройках Vercel включены System Environment Variables: обработчик берёт `VERCEL_PROJECT_PRODUCTION_URL` и отправляет callback на `/api/reminders` этого же Production-проекта. Это важно: адрес второго Vercel-проекта в коде не используется.
-5. Переразверни Production в Vercel.
-
-Бесплатный QStash ограничивает одно отложенное сообщение семью днями; приложение автоматически продлевает ожидание для более поздних дат. Не добавляй токены и секреты в код или GitHub и не отправляй их в чат.
+Автоматических напоминаний нет. Для работы ответов не нужны Upstash Redis и QStash.
 
 ## GitHub Pages
 
