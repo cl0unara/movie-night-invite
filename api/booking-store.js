@@ -1,3 +1,4 @@
+const { randomUUID } = require('node:crypto');
 const { get, put } = require('@vercel/blob');
 
 const STATE_PATH = 'movie-night/shared-state.json';
@@ -51,19 +52,21 @@ async function createBooking(booking) {
       && item.status === 'confirmed'
     );
     if (existing) return { noWrite: true, value: existing };
-    state.bookings.push({ ...booking, status: 'confirmed', createdAt: new Date().toISOString(), cancelledAt: null, adminNotifiedAt: null, guestNotifiedAt: null, cancellationAdminNotifiedAt: null, cancellationGuestNotifiedAt: null });
+    state.bookings.push({ ...booking, id: randomUUID().replace(/-/g, '').slice(0, 10), status: 'confirmed', createdAt: new Date().toISOString(), cancelledAt: null, adminNotifiedAt: null, guestNotifiedAt: null, cancellationAdminNotifiedAt: null, cancellationGuestNotifiedAt: null });
     return { value: state.bookings[state.bookings.length - 1] };
   });
 }
 
-async function cancelBooking({ userId, movieId, date, time }) {
+async function cancelBooking({ userId, movieId, date, time, bookingId }) {
   return updateState(state => {
-    const booking = state.bookings.find(item =>
+    const matches = state.bookings.filter(item =>
       item.userId === String(userId)
       && item.movieId === movieId
       && item.date === date
       && item.time === time
+      && (!bookingId || item.id === bookingId)
     );
+    const booking = matches.find(item => item.status === 'confirmed') || matches[matches.length - 1];
     if (!booking) return { noWrite: true, value: { status: 'not_found' } };
     if (booking.status === 'cancelled') return { noWrite: true, value: { status: 'already_cancelled', booking } };
     booking.status = 'cancelled';
@@ -74,12 +77,16 @@ async function cancelBooking({ userId, movieId, date, time }) {
   });
 }
 
-async function markBookingNotification({ userId, movieId, date, time, field }) {
+async function markBookingNotification({ userId, movieId, date, time, field, bookingId }) {
   if (!['adminNotifiedAt', 'guestNotifiedAt', 'cancellationAdminNotifiedAt', 'cancellationGuestNotifiedAt'].includes(field)) throw new Error('Invalid notification field');
   return updateState(state => {
-    const booking = state.bookings.find(item =>
+    const matches = state.bookings.filter(item =>
       item.userId === String(userId) && item.movieId === movieId && item.date === date && item.time === time
+      && (!bookingId || item.id === bookingId)
     );
+    const booking = field.startsWith('cancellation')
+      ? matches.find(item => item.status === 'cancelled') || matches[matches.length - 1]
+      : matches.find(item => item.status === 'confirmed') || matches[matches.length - 1];
     if (!booking || booking.status !== 'confirmed' && booking.status !== 'cancelled') {
       return { noWrite: true, value: false };
     }
