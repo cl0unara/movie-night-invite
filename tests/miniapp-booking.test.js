@@ -106,7 +106,7 @@ test('booking accepts a future local slot and sends both Telegram messages', asy
     assert.equal(requests[0].body.chat_id, '7001');
     assert.match(requests[0].body.text, /Фильм: Титаник/);
     assert.equal(requests[1].body.chat_id, '555');
-    assert.match(requests[1].body.reply_markup.inline_keyboard[0][0].callback_data, /^cancel_a_2026-11-25_2000_555$/);
+    assert.match(requests[1].body.reply_markup.inline_keyboard[0][0].callback_data, /^cancel_a_2026-11-25_2000_555_[0-9a-f]{10}$/);
     assert.equal(mockBlobState.bookings.length, 1);
     assert.equal(mockBlobState.bookings[0].status, 'confirmed');
   });
