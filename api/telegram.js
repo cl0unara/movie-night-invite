@@ -110,9 +110,19 @@ module.exports = async function handler(req, res) {
     const callbackData = callback.data;
     const callbackSender = formatSenderName(callback.from);
     const callbackPlan = typeof callbackData === 'string' ? parsePlan(callbackData) : null;
+    const callbackSenderId = callback.from && callback.from.id;
+    const isPrivateOwnerChat = callback.message && callback.message.chat
+      && callback.message.chat.type === 'private'
+      && callbackSenderId !== undefined
+      && callbackSenderId !== null
+      && String(callbackSenderId) === String(callbackChatId);
 
     if (!callback.id || !callbackChatId || !callbackMessageId || !callbackPlan || !callbackPlan.cancelled) {
       if (callback.id) await answerCallbackQuery(token, callback.id, 'Не удалось отменить эту запись.');
+      return res.status(200).json({ ok: true });
+    }
+    if (!isPrivateOwnerChat) {
+      await answerCallbackQuery(token, callback.id, 'Эта кнопка доступна только владельцу записи.');
       return res.status(200).json({ ok: true });
     }
     if (!adminChatId) {
