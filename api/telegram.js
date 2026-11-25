@@ -108,11 +108,14 @@ module.exports = async function handler(req, res) {
   if (callback) {
     const callbackChatId = callback.message && callback.message.chat && callback.message.chat.id;
     const callbackMessageId = callback.message && callback.message.message_id;
+    const callbackChatType = callback.message && callback.message.chat && callback.message.chat.type;
+    const callbackUserId = callback.from && callback.from.id;
     const callbackData = callback.data;
     const callbackSender = formatSenderName(callback.from);
     const callbackPlan = typeof callbackData === 'string' ? parsePlan(callbackData) : null;
 
-    if (!callback.id || !callbackChatId || !callbackMessageId || !callbackPlan || !callbackPlan.cancelled) {
+    if (!callback.id || !callbackChatId || !callbackMessageId || callbackChatType !== 'private'
+      || String(callbackUserId) !== String(callbackChatId) || !callbackPlan || !callbackPlan.cancelled) {
       if (callback.id) await answerCallbackQuery(token, callback.id, 'Не удалось отменить эту запись.');
       return res.status(200).json({ ok: true });
     }
