@@ -1,5 +1,5 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
-const { get, put, head } = require('@vercel/blob');
+const { get, put } = require('@vercel/blob');
 
 const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID;
 const STATE_PATH = 'movie-night/shared-state.json';
@@ -31,7 +31,8 @@ function validateInitData(initData, botToken) {
   const b = Buffer.from(hash, 'hex');
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   const authDate = Number(params.get('auth_date'));
-  if (!Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) return null;
+  const now = Date.now() / 1000;
+  if (!Number.isFinite(authDate) || authDate > now + 30 || now - authDate > 86400) return null;
   let user;
   try { user = JSON.parse(params.get('user') || 'null'); } catch { return null; }
   if (!user || !Number.isSafeInteger(user.id)) return null;
@@ -41,7 +42,8 @@ function validateInitData(initData, botToken) {
 async function readState() {
   try {
     const result = await get(STATE_PATH, { access: 'private' });
-    if (!result || result.statusCode !== 200) return { state: DEFAULT_STATE, etag: null };
+    if (!result || result.statusCode === 404) return { state: DEFAULT_STATE, etag: null };
+    if (!result || result.statusCode !== 200) throw new Error('Shared state unavailable');
     const raw = await new Response(result.stream).text();
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.movies)) throw new Error('Invalid state');
@@ -58,10 +60,16 @@ module.exports = async function handler(req, res) {
   if (!token || !process.env.BLOB_READ_WRITE_TOKEN) return res.status(503).json({ error: 'Mini App storage is not configured' });
   const auth = validateInitData(req.headers['x-telegram-init-data'] || (req.body && req.body.initData), token);
   if (!auth) return res.status(401).json({ error: 'Open this app from the Telegram bot' });
-  const isAdmin = auth.id === ADMIN_ID;
+  const isAdmin = Boolean(ADMIN_ID && auth.id === ADMIN_ID);
   try {
     const current = await readState();
-    if (req.method === 'GET') return res.status(200).json({ ...current.state, role: isAdmin ? 'admin' : 'guest' });
+    if (req.method === 'GET') {
+      // Hidden entries are admin-only data; do not expose them in guest API responses.
+      const visibleState = isAdmin
+        ? current.state
+        : { ...current.state, movies: current.state.movies.filter(movie => !movie.hidden) };
+      return res.status(200).json({ ...visibleState, role: isAdmin ? 'admin' : 'guest' });
+    }
     if (!isAdmin) return res.status(403).json({ error: 'Admin access required' });
     const body = req.body || {};
     const action = body.action;

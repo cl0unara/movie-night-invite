@@ -37,6 +37,38 @@
     .movie-row strong{font-size:13px;display:block}.movie-row small{font-size:10px;color:#bda9cf}
     .actions{margin-left:auto;display:flex;flex-direction:column;gap:6px}.action{padding:7px;font-size:10px}
     .empty{font-size:12px;color:#cdbadd}.error{color:#ffb4bd;white-space:pre-wrap;font-size:12px}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 8px}
+    .tab,.filter{border:1px solid #76549a;background:#281939;color:#e9dfea;border-radius:10px;padding:10px 12px;font-size:12px}
+    .tab[aria-selected=true],.filter[aria-pressed=true]{background:#f5aeca;color:#29172e;border-color:#f5aeca;font-weight:800}
+    .filters,.admin-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+    .filters::-webkit-scrollbar,.admin-filters::-webkit-scrollbar{display:none}
+    .filter{white-space:nowrap;padding:8px 11px}
+    .admin-toolbar{display:flex;gap:8px;margin:12px 0 8px}
+    .admin-toolbar input{flex:1;min-width:0;padding:10px 12px;border:1px solid #76549a;border-radius:10px;background:#20152d;color:#fff;font-size:13px}
+    .admin-toolbar .action{white-space:nowrap;padding:9px 12px;font-size:12px}
+    .admin-stats{font-size:11px;color:#cdbadd;margin:8px 0 12px}
+    .admin-movie{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #513967}
+    .admin-movie>div:nth-child(2){flex:1;min-width:0}
+    .admin-movie strong{display:block;font-size:12px;line-height:1.35}
+    .admin-movie small{display:block;font-size:10px;color:#bda9cf;margin-top:4px}
+    .admin-movie .actions{flex-direction:column;gap:5px}
+    button{cursor:pointer;font:inherit}
+    button:focus-visible,input:focus-visible{outline:2px solid #ffc1cf;outline-offset:2px}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    @media(max-width:360px){.admin-movie{gap:7px}.admin-movie>img{width:32px!important;height:48px!important}.admin-movie .action{padding:6px 5px}}
+    .decline-link{display:block;width:100%;margin-top:10px;padding:12px;border:1px solid #76549a;border-radius:11px;background:#281939;color:#e7d9ef;font-size:13px}
+    .modal-backdrop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:22px;background:#10091dcc;backdrop-filter:blur(8px)}
+    .modal-backdrop[hidden]{display:none}
+    .modal{position:relative;width:min(100%,390px);padding:28px 22px;text-align:center;border:1px solid #9869a8;border-radius:24px;background:linear-gradient(145deg,#43264f,#21142f);box-shadow:0 24px 90px #0009;animation:pop-in .55s cubic-bezier(.16,1,.3,1) both;overflow:hidden}
+    .modal h2{font-size:25px;margin:12px 0}.modal p{color:#ead9ec;line-height:1.5;font-size:14px}
+    .modal-icon{font-size:54px;animation:heart-beat 1.1s ease-in-out infinite;filter:drop-shadow(0 0 18px #ff9acb)}
+    .heart-burst{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .heart-burst span{position:absolute;bottom:-30px;font-size:20px;animation:float-heart 2.2s ease-out forwards;opacity:0}
+    .heart-burst span:nth-child(1){left:8%;animation-delay:.05s}.heart-burst span:nth-child(2){left:24%;animation-delay:.25s}.heart-burst span:nth-child(3){left:42%;animation-delay:.1s}.heart-burst span:nth-child(4){left:63%;animation-delay:.35s}.heart-burst span:nth-child(5){left:82%;animation-delay:.18s}
+    @keyframes pop-in{from{opacity:0;transform:translateY(22px) scale(.88)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes heart-beat{0%,100%{transform:scale(1)}45%{transform:scale(1.2)}}
+    @keyframes float-heart{0%{opacity:0;transform:translateY(0) rotate(-15deg) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-310px) rotate(25deg) scale(1.4)}}
+    @media(prefers-reduced-motion:reduce){.modal,.modal-icon,.heart-burst span{animation:none!important}}
     @media(max-width:360px){.poster{height:160px}.times{grid-template-columns:repeat(3,minmax(0,1fr))}}
   </style>
 </head>
@@ -45,6 +77,7 @@
   <div class="eyebrow">Кино на этот вечер</div>
   <h1>Наш киноплан 🎬</h1>
   <p class="intro">Выбираем фильм, день и время для нашего вечера ❤️</p>
+  <button class="decline-link" id="decline-in-app" type="button">Не получается? Сообщить в чат бота</button>
   <p class="status" id="status">Подключаем Telegram…</p>
   <p class="error" id="error"></p>
   <nav class="tabs" id="tabs" hidden>
@@ -75,11 +108,18 @@
   <section class="shelf" id="admin-view" hidden>
     <h2 class="section-title">Управление кинопланом</h2>
     <p class="muted">Меняй порядок фильмов, отмечай просмотренные или скрывай ненужные. Изменения сразу видны в общем каталоге.</p>
+    <div class="admin-toolbar">
+      <input id="admin-search" type="search" placeholder="Найти фильм..." autocomplete="off" aria-label="Поиск по фильмам">
+      <button class="action" id="admin-refresh" type="button">Обновить</button>
+    </div>
+    <p class="admin-stats" id="admin-stats"></p>
+    <div class="admin-filters" id="admin-filters" aria-label="Фильтр фильмов"></div>
     <div id="admin-movies"></div>
     <h2 class="section-title">Скрытые фильмы</h2><div id="hidden"></div>
   </section>
   <div class="modal-backdrop" id="confirmation" hidden role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
     <div class="modal">
+      <div class="heart-burst" aria-hidden="true"><span>♥</span><span>♥</span><span>♡</span><span>♥</span><span>♡</span></div>
       <div class="modal-icon">💗</div>
       <h2 id="confirmation-title">Ты выбрала наш вечер!</h2>
       <p id="confirmation-details"></p>
@@ -96,7 +136,9 @@
   const status=$('status'),error=$('error'),catalog=$('catalog'),watched=$('watched'),hidden=$('hidden');
   const dates=$('dates'),times=$('times'),otherDate=$('other-date'),summary=$('summary'),send=$('send');
   const filters=$('filters'),adminMovies=$('admin-movies');
+  const adminSearch=$('admin-search'),adminFilters=$('admin-filters'),adminStats=$('admin-stats');
   let activeCategory='Все';
+  let activeAdminFilter='Все';
   let activeTab='guest';
   const categories={'interstellar':'Фантастика','chernobyl':'Сериал','one-plus-one':'Комедия','knives-out':'Детектив','bodyguards':'Комедия','titanic':'Романтика','home-alone':'Семейное'};
   const categoryNames=['Все','Фантастика','Детектив','Комедия','Романтика','Семейное','Сериал'];
@@ -113,8 +155,8 @@
   const fmtDate=s=>parseDate(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
   if(tg){tg.ready();tg.expand();}
   async function request(method,body){
-    const r=await fetch('/api/miniapp-state',{method,headers:{'content-type':'application/json','x-telegram-init-data':initData||''},...(body?{body:JSON.stringify({...body,initData})}:{})});
-    const data=await r.json();if(!r.ok)throw new Error(data.error||'Ошибка соединения');return data;
+    const r=await fetch('/api/miniapp-state',{method,cache:'no-store',headers:{'content-type':'application/json','x-telegram-init-data':initData||''},...(body?{body:JSON.stringify({...body,initData})}:{})});
+    const data=await r.json();if(!r.ok){const failure=new Error(data.error||'Ошибка соединения');failure.status=r.status;throw failure;}return data;
   }
   function updateSummary(){
     const item=state&&state.movies.find(m=>m.id===selected);
@@ -125,13 +167,13 @@
   }
   function renderDates(){
     const now=new Date();const today=localDate(now);
+    if(!date){const tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);date=localDate(tomorrow);}
     dates.innerHTML='';
     for(let i=1;i<=7;i++){
       const d=new Date();d.setDate(d.getDate()+i);const value=localDate(d);
       const b=document.createElement('button');b.className='date';b.type='button';b.setAttribute('aria-pressed',String(date===value));
       b.innerHTML='<span>'+d.toLocaleDateString('ru-RU',{weekday:'short'})+'</span><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('ru-RU',{month:'short'})+'</span>';
       b.addEventListener('click',()=>{date=value;otherDate.value='';renderDates();updateSummary();});dates.append(b);
-      if(i===1&&!date)date=value;
     }
     otherDate.min=today;otherDate.value=date&&!Array.from(dates.children).some((_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return localDate(d)===date;})?date:'';
   }
@@ -187,32 +229,75 @@
   async function reorderMovies(movieId,direction){
     const list=[...state.movies],index=list.findIndex(m=>m.id===movieId),next=index+direction;
     if(index<0||next<0||next>=list.length)return;
+    error.textContent='';
     [list[index],list[next]]=[list[next],list[index]];
     const button=adminMovies.querySelectorAll('button');button.forEach(b=>b.disabled=true);
     try{state=await request('POST',{action:'reorder',order:list.map(m=>m.id)});renderAll();}
-    catch(e){error.textContent=e.message;button.forEach(b=>b.disabled=false);}
+    catch(e){
+      if(e.status===409){try{state=await request('GET');renderAll();}catch{}}
+      error.textContent=e.status===409?'Каталог уже изменился в другом окне. Обновил данные — повтори действие.':e.message;
+      button.forEach(b=>b.disabled=false);
+    }
   }
   function renderAdmin(){
     adminMovies.innerHTML='';
-    state.movies.forEach((movie,index)=>{
+    const available=state.movies.filter(m=>!m.hidden&&!m.watched).length;
+    const viewed=state.movies.filter(m=>m.watched&&!m.hidden).length;
+    const hiddenCount=state.movies.filter(m=>m.hidden).length;
+    adminStats.textContent='В каталоге: '+available+' · Просмотрено: '+viewed+' · Скрыто: '+hiddenCount;
+    adminFilters.innerHTML='';
+    ['Все','В каталоге','Просмотрены','Скрыты'].forEach(name=>{
+      const b=document.createElement('button');b.type='button';b.className='filter';b.textContent=name;
+      b.setAttribute('aria-pressed',String(activeAdminFilter===name));
+      b.addEventListener('click',()=>{activeAdminFilter=name;renderAdmin();});
+      adminFilters.append(b);
+    });
+    const query=adminSearch.value.trim().toLocaleLowerCase('ru');
+    const filtered=state.movies.filter(movie=>{
+      const matchesQuery=(movie.title+' '+(movie.category||categories[movie.id]||'')).toLocaleLowerCase('ru').includes(query);
+      const matchesFilter=activeAdminFilter==='Все'
+        ||(activeAdminFilter==='В каталоге'&&!movie.hidden&&!movie.watched)
+        ||(activeAdminFilter==='Просмотрены'&&movie.watched&&!movie.hidden)
+        ||(activeAdminFilter==='Скрыты'&&movie.hidden);
+      return matchesQuery&&matchesFilter;
+    });
+    filtered.forEach(movie=>{
+      const index=state.movies.findIndex(item=>item.id===movie.id);
       const row=document.createElement('div');row.className='admin-movie';
       const img=document.createElement('img');img.src=posters[movie.id]||'';img.alt='';img.onerror=()=>img.style.display='none';img.style.cssText='width:40px;height:56px;object-fit:cover;border-radius:6px';
       const info=document.createElement('div');const title=document.createElement('strong');title.textContent=movie.title;
       const meta=document.createElement('small');meta.className='muted';meta.textContent=(movie.category||categories[movie.id]||'Без категории')+' · '+movie.year+(movie.watched?' · просмотрен':'')+(movie.hidden?' · скрыт':'');
       info.append(title,meta);row.append(img,info);
       const actions=document.createElement('div');actions.className='actions';
-      const action=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='action';b.textContent=label;b.addEventListener('click',fn);actions.append(b);};
-      action('↑',()=>reorderMovies(movie.id,-1));action('↓',()=>reorderMovies(movie.id,1));
+      const action=(label,fn,disabled=false,ariaLabel='')=>{const b=document.createElement('button');b.type='button';b.className='action';b.textContent=label;b.disabled=disabled;if(ariaLabel)b.setAttribute('aria-label',ariaLabel);b.addEventListener('click',fn);actions.append(b);};
+      action('↑',()=>reorderMovies(movie.id,-1),index===0,'Переместить '+movie.title+' выше');
+      action('↓',()=>reorderMovies(movie.id,1),index===state.movies.length-1,'Переместить '+movie.title+' ниже');
       if(movie.watched)action('В планы',()=>setMovieFlag(movie.id,'watched',false));else action('Смотрели',()=>setMovieFlag(movie.id,'watched',true));
       if(movie.hidden)action('Показать',()=>setMovieFlag(movie.id,'hidden',false));else action('Скрыть',()=>setMovieFlag(movie.id,'hidden',true));
       row.append(actions);adminMovies.append(row);
     });
-    if(!adminMovies.children.length)adminMovies.innerHTML='<p class="empty">Каталог пока пуст</p>';
+    if(!adminMovies.children.length)adminMovies.innerHTML='<p class="empty">'+(query?'Ничего не найдено':'В этой группе пока пусто')+'</p>';
     hidden.innerHTML='';state.movies.filter(m=>m.hidden).forEach(m=>hidden.append(adminRow(m,'hidden')));
   }
   async function setMovieFlag(id,action,value){
+    const controls=[...adminMovies.querySelectorAll('button')];
+    controls.forEach(button=>button.disabled=true);
+    error.textContent='';
     try{state=await request('POST',{id,action,value});renderAll();}
-    catch(e){error.textContent=e.message;}
+    catch(e){
+      if(e.status===409){try{state=await request('GET');renderAll();}catch{}}
+      error.textContent=e.status===409?'Каталог уже изменился в другом окне. Обновил данные — повтори действие.':e.message;
+    }finally{
+      controls.forEach(button=>{if(button.isConnected)button.disabled=false;});
+    }
+  }
+  async function refreshSharedState(){
+    const button=$('admin-refresh');button.disabled=true;button.textContent='Обновляем…';error.textContent='';
+    try{
+      const data=await request('GET');state=data;role=data.role;
+      renderAll();renderDates();renderTimes();updateSummary();
+    }catch(e){error.textContent=e.message;}
+    finally{button.disabled=false;button.textContent='Обновить';}
   }
   function setTab(tab){
     activeTab=tab;
@@ -222,6 +307,7 @@
     $('admin-tab').setAttribute('aria-selected',String(admin));
   }
   function renderAll(){
+    if(selected){const chosen=state.movies.find(m=>m.id===selected);if(!chosen||chosen.hidden||chosen.watched)selected='';}
     renderCatalog();
     watched.innerHTML='';state.movies.filter(m=>m.watched&&!m.hidden).forEach(m=>watched.append(adminRow(m,'watched')));
     if(!watched.children.length)watched.innerHTML='<p class="empty">Здесь появятся просмотренные фильмы</p>';
@@ -231,7 +317,14 @@
   }
   $('guest-tab').addEventListener('click',()=>setTab('guest'));
   $('admin-tab').addEventListener('click',()=>{renderAdmin();setTab('admin');});
+  adminSearch.addEventListener('input',renderAdmin);
+  $('admin-refresh').addEventListener('click',refreshSharedState);
   $('confirmation-close').addEventListener('click',()=>{$('confirmation').hidden=true;});
+  $('decline-in-app').addEventListener('click',()=>{
+    const url='https://t.me/'+bot+'?start=no';
+    if(tg&&typeof tg.openTelegramLink==='function')tg.openTelegramLink(url);
+    else window.location.href=url;
+  });
   $('confirmation').addEventListener('click',e=>{if(e.target===$('confirmation'))$('confirmation').hidden=true;});
   otherDate.addEventListener('change',()=>{date=otherDate.value;renderDates();updateSummary();});
   send.addEventListener('click',async()=>{
@@ -242,7 +335,7 @@
       const response=await fetch('/api/miniapp-booking',{
         method:'POST',
         headers:{'content-type':'application/json','x-telegram-init-data':initData||''},
-        body:JSON.stringify({movieId:selected,date,time})
+        body:JSON.stringify({movieId:selected,date,time,timeZoneOffsetMinutes:new Date().getTimezoneOffset()})
       });
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Не удалось отправить запись');
@@ -253,7 +346,7 @@
       $('confirmation').scrollIntoView({behavior:'smooth',block:'nearest'});
     }catch(e){
       error.textContent=e.message;
-      send.disabled=false;send.textContent='Отправить выбор в бот';
+      send.disabled=false;send.textContent='Забронировать вечер ❤️';
       if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('error');
     }
   });

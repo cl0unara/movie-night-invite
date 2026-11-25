@@ -33,6 +33,13 @@ async function telegramRequest(token, method, body) {
   }
 }
 
+async function setChatMenuButton(token, chatId, url) {
+  await telegramRequest(token, 'setChatMenuButton', {
+    chat_id: chatId,
+    menu_button: { type: 'web_app', text: 'Miniapp', web_app: { url } },
+  });
+}
+
 async function sendMessage(token, chatId, text, replyMarkup) {
   const body = { chat_id: chatId, text };
   if (replyMarkup) body.reply_markup = replyMarkup;
@@ -56,6 +63,7 @@ async function removeInlineKeyboard(token, chatId, messageId) {
 
 module.exports = {
   sendMessage,
+  setChatMenuButton,
   answerCallbackQuery,
   removeInlineKeyboard,
   TelegramRequestError,

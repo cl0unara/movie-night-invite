@@ -60,9 +60,12 @@ test('accepted start payload notifies the owner and replies to the guest', async
       callback_data: 'cancel_p_2026-03-30_2215',
     });
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -91,9 +94,12 @@ test('webhook rejects requests without Telegram secret', async () => {
     assert.equal(response.statusCode, 401);
     assert.deepEqual(response.body, { error: 'Unauthorized' });
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = previousFetch;
   }
 });
@@ -108,7 +114,7 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
   };
   const logs = [];
   process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
-  delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
   process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   global.fetch = async () => ({
     ok: false,
@@ -129,7 +135,7 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
       body: {
         message: {
           chat: { id: 555 },
-          text: '/start',
+          text: '/start no',
         },
       },
     }, response);
@@ -138,9 +144,12 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
     assert.match(JSON.stringify(logs), /HTTP 400, code 400: Bad Request: chat not found/);
     assert.doesNotMatch(JSON.stringify(logs), /123:test-token/);
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
     console.error = originalEnv.consoleError;
   }
@@ -156,7 +165,7 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
   };
   const logs = [];
   process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
-  delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
   process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   global.fetch = async () => {
     const cause = new Error('Connection reset');
@@ -173,7 +182,7 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
       body: {
         message: {
           chat: { id: 555 },
-          text: '/start',
+          text: '/start no',
         },
       },
     }, response);
@@ -182,9 +191,12 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
     assert.match(JSON.stringify(logs), /transport failure \(TypeError, ECONNRESET\)/);
     assert.doesNotMatch(JSON.stringify(logs), /123:test-token/);
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
     console.error = originalEnv.consoleError;
   }
@@ -225,9 +237,12 @@ test('accepted legacy payloads notify the owner without using reminder storage',
     assert.match(requests[1].body.text, /Жду тебя, Газява/);
     assert.equal(requests[1].body.reply_markup.inline_keyboard[0][0].text, 'Отменить запись');
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -267,9 +282,12 @@ test('declined start payload notifies the owner and thanks the guest', async () 
     assert.match(requests[0].body.text, /от Аня: в этот раз не получится/);
     assert.equal(requests[1].body.text, 'Спасибо, что ответила ❤️');
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -311,9 +329,12 @@ test('quarter-hour evening times are forwarded to the owner', async () => {
     assert.match(messages[8], /22:45/);
     assert.match(messages[10], /23:45/);
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -355,9 +376,12 @@ test('cancellation payload notifies the owner with the cancelled plan', async ()
     assert.match(requests[0].text, /22:15/);
     assert.equal(requests[1].text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -388,28 +412,33 @@ test('inline cancellation button notifies the owner and removes itself', async (
         callback_query: {
           id: 'callback-123',
           data: 'cancel_c_2026-03-30_2230',
-          from: { first_name: 'Аня', username: 'anya' },
-          message: { message_id: 42, chat: { id: 555 } },
+          from: { id: 555, first_name: 'Аня', username: 'anya' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
         },
       },
     }, response);
 
     assert.equal(response.statusCode, 200);
     assert.equal(requests.length, 4);
-    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
-    assert.match(requests[0].body.text, /Отмена договорённости/);
-    assert.match(requests[0].body.text, /Чернобыль/);
-    assert.match(requests[0].body.text, /22:30/);
-    assert.equal(requests[1].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
-    assert.deepEqual(requests[1].body.reply_markup, { inline_keyboard: [] });
-    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
-    assert.equal(requests[2].body.callback_query_id, 'callback-123');
+    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
+    assert.equal(requests[0].body.callback_query_id, 'callback-123');
+    assert.match(requests[0].body.text, /Отменяем запись/);
+    assert.equal(requests[1].url, 'https://api.telegram.org/bot123:test-token/sendMessage');
+    assert.equal(requests[1].body.chat_id, '7001');
+    assert.match(requests[1].body.text, /Отмена договорённости/);
+    assert.match(requests[1].body.text, /Чернобыль/);
+    assert.match(requests[1].body.text, /22:30/);
+    assert.equal(requests[2].url, 'https://api.telegram.org/bot123:test-token/editMessageReplyMarkup');
+    assert.deepEqual(requests[2].body.reply_markup, { inline_keyboard: [] });
     assert.equal(requests[3].body.chat_id, 555);
     assert.equal(requests[3].body.text, 'Договорённость отменена. Спасибо, что предупредила ❤️');
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
@@ -443,9 +472,205 @@ test('new movie and series payloads are accepted and named correctly', async () 
       assert.match(requests.at(-1).reply_markup.inline_keyboard[0][0].callback_data, new RegExp(`cancel_${code}_`));
     }
   } finally {
-    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
-    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
-    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('plain /start stays silent and installs the Mini App chat menu button', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    miniAppUrl: process.env.TELEGRAM_MINI_APP_URL,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  process.env.TELEGRAM_MINI_APP_URL = 'https://movie-night-invite-vercel.vercel.app/miniapp.html';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: { message: { chat: { id: 555 }, text: '/start' } },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].url, /setChatMenuButton$/);
+    assert.equal(requests[0].body.chat_id, 555);
+    assert.deepEqual(requests[0].body.menu_button, {
+      type: 'web_app',
+      text: 'Miniapp',
+      web_app: { url: 'https://movie-night-invite-vercel.vercel.app/miniapp.html' },
+    });
+    assert.equal(requests.some(request => /sendMessage$/.test(request.url)), false);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    if (originalEnv.miniAppUrl === undefined) delete process.env.TELEGRAM_MINI_APP_URL;
+    else process.env.TELEGRAM_MINI_APP_URL = originalEnv.miniAppUrl;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('cancellation callback from another user is rejected without notifying the owner', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'callback-forged',
+          data: 'cancel_i_2026-03-30_2215',
+          from: { id: 999, first_name: 'Чужой пользователь' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].url, /answerCallbackQuery$/);
+    assert.match(requests[0].body.text, /Не удалось отменить/);
+    assert.equal(requests.some(request => /sendMessage$/.test(request.url)), false);
+    assert.equal(requests.some(request => /editMessageReplyMarkup$/.test(request.url)), false);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
+
+
+test('failed cancellation keeps the inline button available and sends a retry hint', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+    consoleError: console.error,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  console.error = () => {};
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    requests.push({ url, body });
+    if (/sendMessage$/.test(url) && body.chat_id === '7001') {
+      return { ok: false, status: 403, json: async () => ({ ok: false, error_code: 403, description: 'Forbidden' }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'callback-retry',
+          data: 'cancel_i_2026-03-30_2215',
+          from: { id: 555, first_name: 'Аня' },
+          message: { message_id: 43, chat: { id: 555, type: 'private' } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 3);
+    assert.match(requests[0].url, /answerCallbackQuery$/);
+    assert.match(requests[2].url, /sendMessage$/);
+    assert.equal(requests[2].body.chat_id, 555);
+    assert.match(requests[2].body.text, /Кнопка осталась активной/);
+    assert.equal(requests.some(request => /editMessageReplyMarkup$/.test(request.url)), false);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+    console.error = originalEnv.consoleError;
+  }
+});
+
+
+test('ordinary chat messages are ignored without Telegram replies', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: { message: { chat: { id: 555 }, text: 'Привет, как дела?' } },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 0);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
     global.fetch = originalEnv.fetch;
   }
 });
