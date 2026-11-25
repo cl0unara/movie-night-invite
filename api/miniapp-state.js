@@ -42,7 +42,8 @@ function validateInitData(initData, botToken) {
 async function readState() {
   try {
     const result = await get(STATE_PATH, { access: 'private' });
-    if (!result || result.statusCode !== 200) return { state: DEFAULT_STATE, etag: null };
+    if (result && result.statusCode === 404) return { state: DEFAULT_STATE, etag: null };
+    if (!result || result.statusCode !== 200) throw new Error('Shared state unavailable');
     const raw = await new Response(result.stream).text();
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.movies)) throw new Error('Invalid state');
