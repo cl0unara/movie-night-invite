@@ -12,6 +12,7 @@ const DEFAULT_MOVIES = [
 let mockState = structuredClone({ movies: DEFAULT_MOVIES });
 let mockEtag = 'etag-1';
 let mockGetError = null;
+let mockConflict = false;
 let putCalls = 0;
 
 process.env.ADMIN_TELEGRAM_ID = String(ADMIN_ID);
@@ -30,7 +31,7 @@ Module._load = function loadWithBlobMock(request, parent, isMain) {
       },
       put: async (_path, content, options) => {
         putCalls += 1;
-        if (options.ifMatch && options.ifMatch !== mockEtag) {
+        if (mockConflict || (options.ifMatch && options.ifMatch !== mockEtag)) {
           const error = new Error('Precondition failed');
           error.status = 412;
           throw error;
@@ -154,4 +155,24 @@ test('missing shared state starts from the default catalog', async () => {
   assert.equal(response.body.role, 'admin');
   assert.equal(response.body.movies.length, 7);
   assert.equal(response.body.movies[0].id, 'interstellar');
+});
+
+
+test('admin can persist a valid custom movie order', async () => {
+  mockState = structuredClone({ movies: DEFAULT_MOVIES });
+  mockConflict = false;
+  const response = await call('POST', ADMIN_ID, { action: 'reorder', order: ['titanic', 'interstellar'] });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body.movies.map(movie => movie.id), ['titanic', 'interstellar']);
+  assert.deepEqual(mockState.movies.map(movie => movie.id), ['titanic', 'interstellar']);
+});
+
+test('concurrent catalog changes return a conflict instead of overwriting state', async () => {
+  mockState = structuredClone({ movies: DEFAULT_MOVIES });
+  mockConflict = true;
+  const before = structuredClone(mockState);
+  const response = await call('POST', ADMIN_ID, { action: 'hidden', id: 'interstellar', value: true });
+  mockConflict = false;
+  assert.equal(response.statusCode, 409);
+  assert.deepEqual(mockState, before);
 });
