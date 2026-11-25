@@ -636,3 +636,41 @@ test('failed cancellation keeps the inline button available and sends a retry hi
     console.error = originalEnv.consoleError;
   }
 });
+
+
+test('ordinary chat messages are ignored without Telegram replies', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: { message: { chat: { id: 555 }, text: 'Привет, как дела?' } },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 0);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
