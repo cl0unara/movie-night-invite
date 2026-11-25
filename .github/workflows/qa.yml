@@ -36,4 +36,4 @@ jobs:
           new vm.Script(scripts[0][1], { filename: 'miniapp.html:inline-script' });
           NODE
       - name: Run Telegram webhook regression tests
-        run: node --test tests/telegram.test.js
+        run: node --test tests/*.test.js
