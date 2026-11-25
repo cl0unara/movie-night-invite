@@ -83,7 +83,7 @@ function telegramBotHref(payload) {
 }
 
 function renderSavedPlan(payload) {
-  if (typeof payload !== 'string' || !/^yes_[icp]_\\d{4}-\\d{2}-\\d{2}_\\d{4}$/.test(payload)) {
+  if (typeof payload !== 'string' || !/^yes_[icp]_\d{4}-\d{2}-\d{2}_\d{4}$/.test(payload)) {
     cancelPlanPanel.hidden = true;
     return;
   }
