@@ -149,6 +149,7 @@
   background: radial-gradient(ellipse at 50% 30%, #765b68, #241d31 70%);
   font-size: clamp(36px, 6vw, 62px);
 }
+.poster-wrap-landscape img { object-fit: contain; }
 .poster-bodyguards { background: radial-gradient(ellipse at 50% 30%, #79583e, #221d2d 72%); }
 .movie-card:disabled { cursor: default; opacity: .78; }
 .movie-card:disabled:hover { transform: none; }
