@@ -152,19 +152,11 @@ module.exports = async function handler(req, res) {
   if (!start) return res.status(200).json({ ok: true });
 
   const payload = start[1];
-  try {
-    if (!payload) {
-      const greeting = adminChatId
-        ? 'Бот подключён. Открой приглашение и отправь ответ через кнопку.'
-        : `Твой chat ID: ${chatId}\nДобавь его в Vercel как TELEGRAM_ADMIN_CHAT_ID.`;
-      const miniAppUrl = process.env.TELEGRAM_MINI_APP_URL;
-      const replyMarkup = miniAppUrl && /^https:\/\/[a-z0-9.-]+(?:\/.*)?$/i.test(miniAppUrl)
-        ? { inline_keyboard: [[{ text: 'Открыть наш киноплан 🎬', web_app: { url: miniAppUrl } }]] }
-        : undefined;
-      await sendMessage(token, chatId, greeting, replyMarkup);
-      return res.status(200).json({ ok: true });
-    }
+  // Plain /start stays silent. Telegram Bot API cannot force-open a Web App
+  // from a message update; users launch it from the persistent Mini App menu.
+  if (!payload) return res.status(200).json({ ok: true });
 
+  try {
     const plan = parsePlan(payload);
     if (!plan) {
       await sendMessage(token, chatId, 'Не удалось прочитать ответ. Открой приглашение и попробуй ещё раз.');
