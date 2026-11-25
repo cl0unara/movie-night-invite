@@ -579,3 +579,60 @@ test('cancellation callback from another user is rejected without notifying the 
     global.fetch = originalEnv.fetch;
   }
 });
+
+
+test('failed cancellation keeps the inline button available and sends a retry hint', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+    consoleError: console.error,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  console.error = () => {};
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    requests.push({ url, body });
+    if (/sendMessage$/.test(url) && body.chat_id === '7001') {
+      return { ok: false, status: 403, json: async () => ({ ok: false, error_code: 403, description: 'Forbidden' }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'callback-retry',
+          data: 'cancel_i_2026-03-30_2215',
+          from: { id: 555, first_name: 'Аня' },
+          message: { message_id: 43, chat: { id: 555, type: 'private' } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 3);
+    assert.match(requests[0].url, /answerCallbackQuery$/);
+    assert.match(requests[2].url, /sendMessage$/);
+    assert.equal(requests[2].body.chat_id, 555);
+    assert.match(requests[2].body.text, /Кнопка осталась активной/);
+    assert.equal(requests.some(request => /editMessageReplyMarkup$/.test(request.url)), false);
+  } finally {
+    if (originalEnv.token === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    if (originalEnv.adminChatId === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
+    else process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    if (originalEnv.webhookSecret === undefined) delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+    console.error = originalEnv.consoleError;
+  }
+});
