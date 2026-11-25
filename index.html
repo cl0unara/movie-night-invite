@@ -30,7 +30,7 @@
     <section class="intro" aria-labelledby="page-title">
       <p class="eyebrow"><span class="status-dot"></span> ПРИГЛАШЕНИЕ</p>
       <h1 id="page-title">Кино на<br><em>этот вечер</em></h1>
-      <p class="intro-copy">Интерстеллар, Чернобыль или 1+1. Выбери фильм, день и время.</p>
+      <p class="intro-copy">Интерстеллар, Достать ножи, Телохранители и другие варианты для уютного вечера.</p>
     </section>
 
     <section class="invite-card" id="invitation" aria-labelledby="invite-title">
@@ -42,7 +42,7 @@
         <span class="popcorn" aria-hidden="true">🍿</span>
       </div>
 
-      <div class="movies" role="group" aria-label="Фильмы для выбора">
+      <div class="movies" id="movie-catalog" role="group" aria-label="Фильмы и сериалы для выбора">
         <button class="movie-card" type="button" data-movie="Интерстеллар" aria-pressed="false">
           <span class="poster-wrap"><img src="assets/interstellar.png" loading="lazy" decoding="async" alt="Постер фильма Интерстеллар" width="300" height="422"></span>
           <span class="movie-info"><b>Интерстеллар</b><small>Фантастика · 2014</small></span>
@@ -58,7 +58,22 @@
           <span class="movie-info"><b>1+1</b><small>Комедия · 2011</small></span>
           <span class="selected-mark" aria-hidden="true">♥</span>
         </button>
+        <button class="movie-card" type="button" data-movie="Достать ножи" aria-pressed="false">
+          <span class="poster-placeholder poster-knives" aria-hidden="true">🔎</span>
+          <span class="movie-info"><b>Достать ножи</b><small>Детектив · 2019</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
+        <button class="movie-card" type="button" data-movie="Телохранители" aria-pressed="false">
+          <span class="poster-placeholder poster-bodyguards" aria-hidden="true">🥊</span>
+          <span class="movie-info"><b>Телохранители</b><small>Комедийный сериал · 2023</small></span>
+          <span class="selected-mark" aria-hidden="true">♥</span>
+        </button>
       </div>
+      <section class="watched-section" id="watched-section" hidden aria-labelledby="watched-title">
+        <div class="watched-heading"><h3 id="watched-title">Уже посмотрели</h3><span id="watched-count">0</span></div>
+        <p class="watched-note">Отмеченные фильмы и сериалы будут храниться здесь на этом устройстве.</p>
+        <div class="movies watched-movies" id="watched-movies" role="group" aria-label="Уже просмотренные"></div>
+      </section>
       <p class="movie-detail" id="movie-detail" aria-live="polite" hidden></p>
 
       <form class="plan" id="plan-form">
