@@ -222,7 +222,8 @@ test('accepted legacy payloads notify the owner without using reminder storage',
     assert.equal(response.statusCode, 200);
     assert.equal(requests.length, 2);
     assert.match(requests[0].body.text, /Фильм: Интерстеллар/);
-    assert.equal(requests[1].body.text, 'Жду тебя, Газява ❤️');
+    assert.match(requests[1].body.text, /Жду тебя, Газява/);
+    assert.equal(requests[1].body.reply_markup.inline_keyboard[0][0].text, 'Отменить запись');
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
