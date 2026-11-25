@@ -160,12 +160,28 @@
     status.textContent=role==='admin'?'Режим администратора · общий список':'Гостевой доступ · можно выбирать фильм и время';
   }
   otherDate.addEventListener('change',()=>{date=otherDate.value;renderDates();updateSummary();});
-  send.addEventListener('click',()=>{
+  send.addEventListener('click',async()=>{
     if(send.disabled)return;
-    const code=codes[selected];if(!code){error.textContent='Не удалось определить фильм';return;}
-    const payload='yes_'+code+'_'+date+'_'+time.replace(':','');
-    const url='https://t.me/'+bot+'?start='+encodeURIComponent(payload);
-    if(tg&&typeof tg.openTelegramLink==='function')tg.openTelegramLink(url);else window.location.href=url;
+    error.textContent='';
+    send.disabled=true;send.textContent='Отправляем запись…';
+    try{
+      const response=await fetch('/api/miniapp-booking',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-telegram-init-data':initData||''},
+        body:JSON.stringify({movieId:selected,date,time})
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Не удалось отправить запись');
+      $('confirmation-details').textContent=result.movie+' · '+fmtDate(result.date)+' · '+result.time;
+      $('confirmation').hidden=false;
+      send.textContent='Запись отправлена ❤️';
+      if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+      $('confirmation').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }catch(e){
+      error.textContent=e.message;
+      send.disabled=false;send.textContent='Отправить выбор в бот';
+      if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('error');
+    }
   });
   if(!initData){status.textContent='Открой приложение через меню Telegram-бота.';error.textContent='Telegram не передал данные авторизации.';return;}
   request('GET').then(async data=>{
