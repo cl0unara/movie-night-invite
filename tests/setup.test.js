@@ -48,7 +48,7 @@ test('setup registers the Telegram webhook on the production domain', async () =
     assert.equal(request.url, 'https://api.telegram.org/bot123:test-token/setWebhook');
     assert.equal(request.body.url, 'https://movie-invite-test.vercel.app/api/telegram');
     assert.equal(request.body.secret_token, 'hook-secret');
-    assert.deepEqual(request.body.allowed_updates, ['message']);
+    assert.deepEqual(request.body.allowed_updates, ['message', 'callback_query']);
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
     process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
