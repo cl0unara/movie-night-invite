@@ -413,3 +413,39 @@ test('inline cancellation button notifies the owner and removes itself', async (
     global.fetch = originalEnv.fetch;
   }
 });
+
+
+test('new movie and series payloads are accepted and named correctly', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+  try {
+    for (const [code, title] of [['k', 'Достать ножи'], ['t', 'Телохранители']]) {
+      const response = createResponse();
+      await handler({
+        method: 'POST',
+        headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+        body: { message: { chat: { id: 555 }, text: `/start yes_${code}_2026-03-30_2215` } },
+      }, response);
+      assert.equal(response.statusCode, 200);
+      assert.match(requests.at(-2).text, new RegExp(title));
+      assert.match(requests.at(-1).reply_markup.inline_keyboard[0][0].callback_data, new RegExp(`cancel_${code}_`));
+    }
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
