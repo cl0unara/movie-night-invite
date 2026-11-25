@@ -22,3 +22,5 @@ jobs:
           for file in api/*.js; do
             node --check "$file"
           done
+      - name: Run API tests
+        run: node --test tests/*.test.js
