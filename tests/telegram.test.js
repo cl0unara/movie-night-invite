@@ -449,3 +449,48 @@ test('new movie and series payloads are accepted and named correctly', async () 
     global.fetch = originalEnv.fetch;
   }
 });
+
+
+test('inline cancellation button cannot be used by another Telegram user', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    fetch: global.fetch,
+  };
+  const requests = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  global.fetch = async (url, options) => {
+    requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+
+  try {
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        callback_query: {
+          id: 'forged-callback',
+          data: 'cancel_c_2026-03-30_2230',
+          from: { id: 999, first_name: 'Attacker' },
+          message: { message_id: 42, chat: { id: 555, type: 'private' } },
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, 'https://api.telegram.org/bot123:test-token/answerCallbackQuery');
+    assert.equal(requests[0].body.callback_query_id, 'forged-callback');
+    assert.match(requests[0].body.text, /владельцу записи/);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    global.fetch = originalEnv.fetch;
+  }
+});
