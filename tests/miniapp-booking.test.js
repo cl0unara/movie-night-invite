@@ -1,7 +1,26 @@
 const assert = require('node:assert/strict');
 const { createHmac } = require('node:crypto');
 const { test } = require('node:test');
+const Module = require('node:module');
+let mockBlobState = null;
+const originalLoad = Module._load;
+Module._load = function loadWithBlobMock(request, parent, isMain) {
+  if (request === '@vercel/blob') {
+    return {
+      get: async () => {
+        if (mockBlobState === null) {
+          const error = new Error('Blob not found');
+          error.status = 404;
+          throw error;
+        }
+        return { statusCode: 200, stream: new Response(JSON.stringify(mockBlobState)).body };
+      },
+    };
+  }
+  return originalLoad.call(this, request, parent, isMain);
+};
 const handler = require('../api/miniapp-booking');
+Module._load = originalLoad;
 
 const BOT_TOKEN = '123:test-token';
 const USER = { id: 555, first_name: 'Аня', username: 'anya' };
@@ -35,12 +54,15 @@ async function withBookingEnvironment(run) {
   const original = {
     token: process.env.TELEGRAM_BOT_TOKEN,
     admin: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    blob: process.env.BLOB_READ_WRITE_TOKEN,
     fetch: global.fetch,
     now: Date.now,
   };
   const requests = [];
   process.env.TELEGRAM_BOT_TOKEN = BOT_TOKEN;
   process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.BLOB_READ_WRITE_TOKEN = 'test-blob-token';
+  mockBlobState = null;
   global.fetch = async (url, options) => {
     requests.push({ url, body: JSON.parse(options.body) });
     return { ok: true, status: 200, json: async () => ({ ok: true }) };
@@ -52,6 +74,9 @@ async function withBookingEnvironment(run) {
     else process.env.TELEGRAM_BOT_TOKEN = original.token;
     if (original.admin === undefined) delete process.env.TELEGRAM_ADMIN_CHAT_ID;
     else process.env.TELEGRAM_ADMIN_CHAT_ID = original.admin;
+    if (original.blob === undefined) delete process.env.BLOB_READ_WRITE_TOKEN;
+    else process.env.BLOB_READ_WRITE_TOKEN = original.blob;
+    mockBlobState = null;
     global.fetch = original.fetch;
     Date.now = original.now;
   }
@@ -153,6 +178,24 @@ test('booking rejects invalid movie, date and time values', async () => {
       }, response);
       assert.equal(response.statusCode, 400);
     }
+    assert.equal(requests.length, 0);
+  });
+});
+
+
+test('booking rejects a movie hidden or marked watched in shared state', async () => {
+  await withBookingEnvironment(async requests => {
+    const authDate = Math.floor(Date.now() / 1000);
+    mockBlobState = { movies: [{ id: 'titanic', hidden: true, watched: false }] };
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-init-data': createInitData(USER, authDate) },
+      body: requestBody({ authDate }),
+    }, response);
+
+    assert.equal(response.statusCode, 409);
+    assert.match(response.body.error, /больше недоступен/);
     assert.equal(requests.length, 0);
   });
 });
