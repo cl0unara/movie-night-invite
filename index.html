@@ -73,6 +73,10 @@
         <div class="time-picks" id="time-picks" role="group" aria-label="Время просмотра"></div>
         <input id="time" name="time" type="hidden" value="20:00">
         <p class="selection-summary" id="summary" aria-live="polite">Сначала выбери фильм</p>
+        <div class="cancel-plan" id="cancel-plan" hidden>
+          <span>Если планы изменятся, договорённость можно отменить и я получу сообщение.</span>
+          <a class="button button-quiet" id="cancel-plan-button" href="">Отказаться от договорённости</a>
+        </div>
         <div class="form-actions">
           <button class="button button-main" id="send-answer" type="submit" disabled>Отправить ответ <span aria-hidden="true">♡</span></button>
           <button class="button button-quiet" id="decline" type="button">Не подойдёт</button>
