@@ -69,18 +69,8 @@
           <span>Другая дата</span>
           <input id="date" name="date" type="date" required>
         </label>
-        <div class="time-heading"><span>Время</span><span class="date-note">00:00, 01:00 и 02:00 уже следующей ночью</span></div>
-        <div class="time-picks" id="time-picks" role="group" aria-label="Время просмотра">
-          <button type="button" class="time-chip" data-time="18:00" aria-pressed="false"><span aria-hidden="true">☀</span>18:00</button>
-          <button type="button" class="time-chip" data-time="19:00" aria-pressed="false"><span aria-hidden="true">◷</span>19:00</button>
-          <button type="button" class="time-chip selected" data-time="20:00" aria-pressed="true"><span aria-hidden="true">☾</span>20:00</button>
-          <button type="button" class="time-chip" data-time="21:00" aria-pressed="false"><span aria-hidden="true">☾</span>21:00</button>
-          <button type="button" class="time-chip" data-time="22:00" aria-pressed="false"><span aria-hidden="true">✦</span>22:00</button>
-          <button type="button" class="time-chip" data-time="23:00" aria-pressed="false"><span aria-hidden="true">✦</span>23:00</button>
-          <button type="button" class="time-chip" data-time="00:00" aria-pressed="false"><span aria-hidden="true">✦</span>00:00</button>
-          <button type="button" class="time-chip" data-time="01:00" aria-pressed="false"><span aria-hidden="true">✦</span>01:00</button>
-          <button type="button" class="time-chip" data-time="02:00" aria-pressed="false"><span aria-hidden="true">✦</span>02:00</button>
-        </div>
+        <div class="time-heading"><span>Время</span><span class="date-note">С 18:00 до 23:45 · шаг 15 минут</span></div>
+        <div class="time-picks" id="time-picks" role="group" aria-label="Время просмотра"></div>
         <input id="time" name="time" type="hidden" value="20:00">
         <p class="selection-summary" id="summary" aria-live="polite">Сначала выбери фильм</p>
         <div class="form-actions">
@@ -111,7 +101,8 @@
       <p class="eyebrow" id="thanks-eyebrow">ОТВЕТ</p>
       <h2 id="thanks-title">Жду тебя,<br><em>Газява ❤️</em></h2>
       <p id="thanks-copy">Откроется бот. Нажми «Start/Старт», и ответ сразу придёт мне.</p>
-      <a class="button button-main" id="send-telegram" href="">Открыть бота</a>
+      <a class="button button-main" id="send-telegram" href="">Подтвердить в боте</a>
+      <a class="button button-quiet" id="cancel-telegram" href="">Отказаться от договорённости</a>
       <button class="button button-quiet" id="close-thanks" type="button">Закрыть</button>
     </div>
   </dialog>
