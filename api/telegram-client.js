@@ -1,3 +1,5 @@
+class TelegramRequestError extends Error {}
+
 async function telegramRequest(token, method, body) {
   let response;
   try {
@@ -11,34 +13,23 @@ async function telegramRequest(token, method, body) {
       && typeof error.cause === 'object'
       ? error.cause
       : null;
-    console.error('Telegram API transport failed.', {
-      method,
-      errorName: error instanceof Error ? error.name : 'UnknownError',
-      causeCode: cause && typeof cause.code === 'string' ? cause.code : undefined,
-    });
-    throw new Error('Telegram API request failed');
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const causeCode = cause && typeof cause.code === 'string' ? `, ${cause.code}` : '';
+    throw new TelegramRequestError(`transport failure (${errorName}${causeCode})`);
   }
 
   let result;
   try {
     result = await response.json();
   } catch {
-    console.error('Telegram API returned an invalid response.', {
-      method,
-      status: response.status,
-    });
-    throw new Error('Telegram returned an invalid response');
+    throw new TelegramRequestError(`invalid response (HTTP ${response.status})`);
   }
   if (!response.ok || !result.ok) {
-    console.error('Telegram API request failed.', {
-      method,
-      status: response.status,
-      errorCode: Number.isInteger(result.error_code) ? result.error_code : undefined,
-      description: typeof result.description === 'string'
-        ? result.description.slice(0, 200)
-        : undefined,
-    });
-    throw new Error('Telegram rejected the request');
+    const errorCode = Number.isInteger(result.error_code) ? `, code ${result.error_code}` : '';
+    const description = typeof result.description === 'string'
+      ? result.description.replace(/[\r\n\t]+/g, ' ').slice(0, 200)
+      : 'API rejected request';
+    throw new TelegramRequestError(`HTTP ${response.status}${errorCode}: ${description}`);
   }
 }
 
@@ -46,4 +37,4 @@ async function sendMessage(token, chatId, text) {
   await telegramRequest(token, 'sendMessage', { chat_id: chatId, text });
 }
 
-module.exports = { sendMessage };
+module.exports = { sendMessage, TelegramRequestError };

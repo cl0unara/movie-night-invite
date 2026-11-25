@@ -131,7 +131,7 @@ test('Telegram API rejection is logged without exposing the bot token', async ()
     }, response);
 
     assert.equal(response.statusCode, 502);
-    assert.match(JSON.stringify(logs), /Bad Request: chat not found/);
+    assert.match(JSON.stringify(logs), /HTTP 400, code 400: Bad Request: chat not found/);
     assert.doesNotMatch(JSON.stringify(logs), /123:test-token/);
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
@@ -175,7 +175,7 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
     }, response);
 
     assert.equal(response.statusCode, 502);
-    assert.match(JSON.stringify(logs), /ECONNRESET/);
+    assert.match(JSON.stringify(logs), /transport failure \(TypeError, ECONNRESET\)/);
     assert.doesNotMatch(JSON.stringify(logs), /123:test-token/);
   } finally {
     process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
