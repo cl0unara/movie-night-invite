@@ -84,20 +84,22 @@ async function call(method, userId, body) {
 }
 
 test('guest API response does not disclose hidden movies', async () => {
-  mockState = structuredClone({ movies: DEFAULT_MOVIES });
+  mockState = structuredClone({ movies: DEFAULT_MOVIES, bookings: [{ userId: '555', movieTitle: 'Титаник', status: 'confirmed' }] });
   const response = await call('GET', 777);
   assert.equal(response.statusCode, 200);
   assert.equal(response.body.role, 'guest');
   assert.deepEqual(response.body.movies.map(movie => movie.id), ['interstellar']);
+  assert.equal(Object.hasOwn(response.body, 'bookings'), false);
 });
 
 test('only the configured Telegram owner receives the admin role and hidden catalog', async () => {
-  mockState = structuredClone({ movies: DEFAULT_MOVIES });
+  mockState = structuredClone({ movies: DEFAULT_MOVIES, bookings: [{ userId: '555', movieTitle: 'Титаник', status: 'confirmed' }] });
   const guest = await call('GET', 777);
   const admin = await call('GET', ADMIN_ID);
   assert.equal(guest.body.role, 'guest');
   assert.equal(admin.body.role, 'admin');
   assert.equal(admin.body.movies.length, 2);
+  assert.equal(admin.body.bookings.length, 1);
 });
 
 test('guest cannot change movie flags even with a forged admin action body', async () => {
