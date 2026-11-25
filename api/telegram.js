@@ -6,6 +6,7 @@ const {
   removeInlineKeyboard,
   TelegramRequestError,
 } = require('./telegram-client');
+const { createBooking, cancelBooking, markBookingNotification } = require('./booking-store');
 
 const MOVIES = {
   i: 'Интерстеллар',
@@ -57,6 +58,8 @@ function parsePlan(payload) {
     movie: MOVIES[match[2]],
     date: match[3],
     time: `${match[4].slice(0, 2)}:${match[4].slice(2)}`,
+    userId: match[5] || null,
+    movieId: ({ i: 'interstellar', c: 'chernobyl', p: 'one-plus-one', k: 'knives-out', t: 'bodyguards', a: 'titanic', h: 'home-alone' })[match[2]],
   };
 }
 
@@ -124,23 +127,45 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    if (!callbackPlan.userId || callbackPlan.userId !== String(callbackUserId)) {
+      await answerCallbackQuery(token, callback.id, 'Эта кнопка устарела. Открой актуальную запись в чате.');
+      return res.status(200).json({ ok: true });
+    }
+
     try {
       await answerCallbackQuery(token, callback.id, 'Отменяем запись…');
-      await sendMessage(
-        token,
-        adminChatId,
-        `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
-      );
+      const result = await cancelBooking({
+        userId: callbackUserId,
+        movieId: callbackPlan.movieId,
+        date: callbackPlan.date,
+        time: callbackPlan.time,
+      });
+      if (result.status === 'not_found') {
+        await sendMessage(token, callbackChatId, 'Не нашёл активную запись для отмены. Если планы изменились, напиши мне напрямую ❤️');
+        return res.status(200).json({ ok: true });
+      }
+      const booking = result.booking;
+      if (!booking.adminNotifiedAt) {
+        await sendMessage(
+          token,
+          adminChatId,
+          `Отмена договорённости 💔\nОт: ${callbackSender}\nФильм: ${callbackPlan.movie}\nОтменённый план: ${formatDate(callbackPlan.date)}, ${callbackPlan.time}`,
+        );
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'adminNotifiedAt' });
+      }
       await removeInlineKeyboard(token, callbackChatId, callbackMessageId);
-      await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+      if (!booking.guestNotifiedAt) {
+        await sendMessage(token, callbackChatId, 'Договорённость отменена. Спасибо, что предупредила ❤️');
+        await markBookingNotification({ userId: callbackUserId, movieId: callbackPlan.movieId, date: callbackPlan.date, time: callbackPlan.time, field: 'guestNotifiedAt' });
+      }
       return res.status(200).json({ ok: true });
     } catch (error) {
       const detail = error instanceof TelegramRequestError ? ` (${error.message})` : '';
       console.error(`Telegram cancellation failed${detail}.`);
       try {
-        await sendMessage(token, callbackChatId, 'Не удалось завершить отмену. Кнопка осталась активной — попробуй ещё раз чуть позже.');
+        await sendMessage(token, callbackChatId, 'Отмена сохранена, но уведомление не удалось доставить. Попробуй нажать кнопку ещё раз — я повторю отправку.');
       } catch {}
-      return res.status(200).json({ ok: true });
+      return res.status(500).json({ error: 'Cancellation notification delivery failed' });
     }
   }
 
