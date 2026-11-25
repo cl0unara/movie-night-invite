@@ -1,4 +1,4 @@
-const { createHmac, timingSafeEqual } = require('node:crypto');
+const { validateTelegramInitData } = require('./telegram-auth');
 const { sendMessage, TelegramRequestError } = require('./telegram-client');
 
 const MOVIES = {
@@ -10,33 +10,6 @@ const MOVIES = {
   titanic: ['Титаник', 'a'],
   'home-alone': ['Один дома', 'h'],
 };
-
-function validateInitData(initData, botToken) {
-  if (typeof initData !== 'string' || !initData || initData.length > 8192) return null;
-  const params = new URLSearchParams(initData);
-  const hash = params.get('hash');
-  if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) return null;
-  params.delete('hash');
-  const checkString = [...params.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([key, value]) => key + '=' + value)
-    .join('\n');
-  const secret = createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const calculated = createHmac('sha256', secret).update(checkString).digest('hex');
-  const a = Buffer.from(calculated, 'hex');
-  const b = Buffer.from(hash, 'hex');
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const authDate = Number(params.get('auth_date'));
-  if (!Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) return null;
-  let user;
-  try { user = JSON.parse(params.get('user') || 'null'); } catch { return null; }
-  if (!user || !Number.isSafeInteger(user.id)) return null;
-  return {
-    id: String(user.id),
-    name: [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || 'Гость',
-    username: typeof user.username === 'string' ? '@' + user.username : '',
-  };
-}
 
 function formatDate(value) {
   return new Intl.DateTimeFormat('ru-RU', {
@@ -51,7 +24,7 @@ module.exports = async function handler(req, res) {
   if (!token || !adminChatId || !/^-?\d+$/.test(adminChatId)) {
     return res.status(503).json({ error: 'Бот ещё не настроен для получения записей. Напиши администратору.' });
   }
-  const auth = validateInitData(req.headers['x-telegram-init-data'] || (req.body && req.body.initData), token);
+  const auth = validateTelegramInitData(req.headers['x-telegram-init-data'], token);
   if (!auth) return res.status(401).json({ error: 'Открой киноплан через Telegram-бота и попробуй снова.' });
 
   const body = req.body || {};
