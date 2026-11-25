@@ -186,6 +186,66 @@ test('Telegram transport errors are logged without exposing the bot token', asyn
   }
 });
 
+test('Redis failures are logged without exposing the Redis token', async () => {
+  const originalEnv = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    adminChatId: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    redisUrl: process.env.UPSTASH_REDIS_REST_URL,
+    redisToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+    qstashToken: process.env.QSTASH_TOKEN,
+    callbackSecret: process.env.REMINDER_CALLBACK_SECRET,
+    productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    fetch: global.fetch,
+    consoleError: console.error,
+  };
+  const logs = [];
+  process.env.TELEGRAM_BOT_TOKEN = '123:test-token';
+  process.env.TELEGRAM_ADMIN_CHAT_ID = '7001';
+  process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
+  process.env.UPSTASH_REDIS_REST_URL = 'https://redis.test';
+  process.env.UPSTASH_REDIS_REST_TOKEN = 'redis-secret';
+  process.env.QSTASH_TOKEN = 'qstash-secret';
+  process.env.REMINDER_CALLBACK_SECRET = 'callback-secret';
+  process.env.VERCEL_PROJECT_PRODUCTION_URL = 'movie-night-invite-vercel.vercel.app';
+  global.fetch = async () => ({
+    ok: false,
+    status: 401,
+    json: async () => ({ error: 'Unauthorized' }),
+  });
+  console.error = (...args) => logs.push(args);
+
+  try {
+    const meetingMinute = Math.floor((Date.now() + 60 * 60 * 1000) / 60000).toString(36);
+    const response = createResponse();
+    await handler({
+      method: 'POST',
+      headers: { 'x-telegram-bot-api-secret-token': 'test-secret' },
+      body: {
+        message: {
+          chat: { id: 555 },
+          text: `/start yes_i_2026-03-30_2000_${meetingMinute}`,
+        },
+      },
+    }, response);
+
+    assert.equal(response.statusCode, 502);
+    assert.match(JSON.stringify(logs), /HTTP 401: Unauthorized/);
+    assert.doesNotMatch(JSON.stringify(logs), /redis-secret/);
+  } finally {
+    process.env.TELEGRAM_BOT_TOKEN = originalEnv.token;
+    process.env.TELEGRAM_ADMIN_CHAT_ID = originalEnv.adminChatId;
+    process.env.TELEGRAM_WEBHOOK_SECRET = originalEnv.webhookSecret;
+    process.env.UPSTASH_REDIS_REST_URL = originalEnv.redisUrl;
+    process.env.UPSTASH_REDIS_REST_TOKEN = originalEnv.redisToken;
+    process.env.QSTASH_TOKEN = originalEnv.qstashToken;
+    process.env.REMINDER_CALLBACK_SECRET = originalEnv.callbackSecret;
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = originalEnv.productionUrl;
+    global.fetch = originalEnv.fetch;
+    console.error = originalEnv.consoleError;
+  }
+});
+
 test('declined start payload notifies the owner and thanks the guest', async () => {
   const originalEnv = {
     token: process.env.TELEGRAM_BOT_TOKEN,

@@ -1,6 +1,11 @@
 const { timingSafeEqual } = require('node:crypto');
 const { sendMessage, TelegramRequestError } = require('./telegram-client');
-const { cancelReminder, scheduleReminder, isConfigured } = require('./reminder-store');
+const {
+  ReminderStorageError,
+  cancelReminder,
+  scheduleReminder,
+  isConfigured,
+} = require('./reminder-store');
 
 const MOVIES = {
   i: 'Интерстеллар',
@@ -146,7 +151,9 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    const detail = error instanceof TelegramRequestError ? ` (${error.message})` : '';
+    const detail = error instanceof TelegramRequestError || error instanceof ReminderStorageError
+      ? ` (${error.message})`
+      : '';
     console.error(`Telegram message delivery failed${detail}.`);
     return res.status(502).json({ error: 'Telegram message delivery failed' });
   }

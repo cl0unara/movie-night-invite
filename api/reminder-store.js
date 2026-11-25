@@ -1,5 +1,8 @@
 const DATA_KEY = 'movie-night:reminders:data';
 const MAX_QSTASH_DELAY_SECONDS = 6 * 24 * 60 * 60;
+
+class ReminderStorageError extends Error {}
+
 function getReminderCallbackUrl() {
   const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   if (typeof host !== 'string' || !/^[a-z0-9.-]+$/i.test(host)) {
@@ -24,23 +27,37 @@ async function redisCommand(command) {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error('Reminder storage is not configured');
 
-  const response = await fetch(url.replace(/\/+$/, ''), {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(command),
-  });
+  let response;
+  try {
+    response = await fetch(url.replace(/\/+$/, ''), {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(command),
+    });
+  } catch (error) {
+    const cause = error && typeof error === 'object' && error.cause
+      && typeof error.cause === 'object'
+      ? error.cause
+      : null;
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const causeCode = cause && typeof cause.code === 'string' ? `, ${cause.code}` : '';
+    throw new ReminderStorageError(`Redis transport failure (${errorName}${causeCode})`);
+  }
 
   let result;
   try {
     result = await response.json();
   } catch {
-    throw new Error('Reminder storage returned an invalid response');
+    throw new ReminderStorageError(`Redis returned an invalid response (HTTP ${response.status})`);
   }
-  if (!response.ok || result.error) {
-    throw new Error('Reminder storage command failed');
+  if (!response.ok || (result && result.error)) {
+    const description = result && typeof result.error === 'string'
+      ? result.error.replace(/[\r\n\t]+/g, ' ').slice(0, 200)
+      : 'Redis rejected command';
+    throw new ReminderStorageError(`HTTP ${response.status}: ${description}`);
   }
   return result.result;
 }
@@ -118,6 +135,7 @@ async function removeReminderIfUnchanged(chatId, meetingAt) {
 }
 
 module.exports = {
+  ReminderStorageError,
   cancelReminder,
   getReminder,
   isConfigured,
